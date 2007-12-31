@@ -180,11 +180,9 @@ def matr_img(path_:str,pixel_amount:int)->tuple:
     img:PIL.Image=None
     data=None
     for fold_name_i in p:
-        # print("fold_name_i",fold_name_i)
         fold_name_ind=int(fold_name_i.split('_')[0])
         p_tmp_ful=os.path.join(path_,fold_name_i)
         fold_content=listdir(p_tmp_ful)
-        # print("fold_cont",fold_content)
         rows=len(fold_content)
         X_t=np.zeros((rows,pixel_amount))
         Y_t=np.zeros((rows,num_clss))

@@ -1,13 +1,12 @@
 
 Keras shell code
-
 =================
 
 Описание: Байтовая машина для инс Keras
 
 Тестировалась на: python373
 
-Предустановленные пакеты: keras numpy logging matplotlib
+Предустановленные пакеты: keras numpy logging matplotlib PIL
 
 ОС: windows7
 

@@ -70,7 +70,19 @@ if __name__ == '__main__':
          plot_train, "Logic And",
          stop
          )
-    exec(p20,loger,date)
+    # Сеть от логического И наоборот
+    p21=(load_model_wei,
+         get_weis,
+         make_net_on_contrary,('S',('D','D'),(2, 3, 1),('r','s'),('use_bias_1', 'use_bias_1'),ke_init[0]),
+         compile_net, (opt, compile_pars[1], compile_pars[2]),
+         push_obj,[[1]], # Y
+         nparray,
+         push_obj,[[1]], # X
+         nparray,
+         determe_X_Y,
+         predict,
+         stop)
+    exec(p21,loger,date)
 
 
 
