@@ -5,16 +5,16 @@ import os
 from PIL import Image
 import datetime as d
 from functools import wraps
-def get_logger(level_,fname,module):
+def get_logger(level_,fname,module,mode='w'):
     today=d.datetime.today()
     today_s=today.strftime('%x %X')
     logger = None
     logger = logging.getLogger(module)
     if level_ == 'debug':
-            logging.basicConfig(level=logging.DEBUG, filename=fname, filemode='w')
+            logging.basicConfig(level=logging.DEBUG, filename=fname, filemode=mode)
 
     elif level_ == 'release':
-        logging.basicConfig(level=logging.INFO, filename=fname, filemode='w')
+        logging.basicConfig(level=logging.INFO, filename=fname, filemode=mode)
     return logger, today_s
 
 def calc_list(list_:list):
@@ -34,9 +34,9 @@ def calc_out_nn(l_: list):
     for i in range(len(l_)):
         val = round(l_[i], 1)
         if val > 0.5:
-            l_tested[i] = 0
-        else:
             l_tested[i] = 255
+        else:
+            l_tested[i] = 0
     return l_tested
 
 
@@ -48,8 +48,8 @@ def make_2d_arr(_1d_arr: list):
     return matr_make
 
 
-def make_train_matr(p_: str) -> np.ndarray:
-    matr = np.zeros(shape=(4, 10000))
+def make_train_img_matr(p_: str,rows,elems) -> np.ndarray:
+    matr = np.zeros(shape=(rows, elems))
     data = None
     img = None
     cn_img = 0
