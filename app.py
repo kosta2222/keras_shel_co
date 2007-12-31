@@ -17,27 +17,6 @@ import json
 """
 Замечания: для Python3 с f строками(используются в логинге)
 """
-def create_nn(is_my_init):
-    k_i=None
-    if is_my_init:
-      k_i=ke_init[1]
-    else:
-        k_i=ke_init[0]
-    model = Sequential()
-    d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0],use_bias=us_bias[1],kernel_initializer=k_i)
-    model.add(d0)  # d0.input_shape
-    # print("in create nn d0 pars")
-    # d1=Dense(init_lays[2], activation=act_funcs[1], use_bias=us_bias[1],kernel_initializer=k_i)
-    # model.add(d1)
-    # d2=Dense(init_lays[3], activation=act_funcs[2], use_bias=us_bias[1],kernel_initializer=k_i)
-    # model.add(d2)
-    return model#,d1,d2
-def fit_nn(X,Y):
-    es=EarlyStopping(monitor=monitor_pars[0])
-    model_obj.compile(optimizer=compile_pars[0], loss=compile_pars[1], metrics=compile_pars[2])
-    model_obj.fit(X, Y, epochs=fit_pars[0], validation_split=fit_pars[1],callbacks=[my_lr_scheduler])
-
-
 def pred(X):
   return model_obj.predict(X)
 
@@ -407,20 +386,10 @@ def vm(buffer,logger, date):
                             initializer = initializers.get(kern_init)
                             l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts_di.get(acts[i]), use_bias=use_bias_,
                                           trainable=True)
-                            # l_tmp.build((None,inps[0]))
-                            # logger.debug(f'l_tmp.add_weight {l_tmp.add_weight(shape=(inps[0],inps[i+1]),initializer=kern_init,name=str(i))}')
-                            # l_tmp.build((None,inps[0]))
-                            # l_tmp.add_weight(shape=(inps[0],inps[i+1]),initializer=kern_init,name=str(i))
-                            # l_tmp.build((None,inps[0]))
-                            logger.debug(f"ltmp {l_tmp} i={i}")
-                            logger.debug(f'l_tmp config  {l_tmp.get_config()}')
+                         
                         else:
                             l_tmp = Dense(inps[i + 1],input_dim=inps[i],activation=acts_di.get(acts[i]), use_bias=use_bias_,
                                            trainable=True)
-                            # l_tmp.build((None,inps[i]))
-                            # l_tmp.add_weight(shape=(inps[i],inps[i+1]),initializer=kern_init,name=str(i))
-                            logger.debug(f"ltmp {l_tmp} i={i}")
-                            logger.debug(f'l_tmp config  {l_tmp.get_config()}')
                         model_obj.add(l_tmp)
 
         elif op==make_net_load_wei:
@@ -464,15 +433,11 @@ def vm(buffer,logger, date):
             ip += 1
             arg = buffer[ip]
             type_m, denses, inps, acts, use_bi, kern_init = arg
-            # if len(acts) == 1:
-            #     print("op")
-            #     acts = acts[0]
             if type_m == 'S':
                 model_obj = Sequential()
             for i in range(len(denses)):
                 if denses[i] == 'D':
                     splt_bi = use_bi[i].split('_')
-                    print("splt_bi", splt_bi)
                     if splt_bi[-1] == '1':
                         use_bias_ = True
                     elif splt_bi[-1] == '0':
