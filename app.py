@@ -15,7 +15,6 @@ import json
 from keras.utils import generic_utils
 import matplotlib.pyplot as plt
 import logging
-from matr_img import matr_img
 
 
 # from  keras.optimizers import
@@ -63,7 +62,7 @@ fit_net=23
 make_net_load_wei=24
 make_net_on_contrary=25
 plot_train=26
-learn_mult_class=27
+get_mult_class_matr=27
 ops=("")  #  No need in console input in this programm
 
 
@@ -153,6 +152,11 @@ def plot_history_(_file:str,history:History,name_gr:str,logger:logging.Logger):
     plt.ylabel('Доля верных ответов / loss')
     ax.legend()
     plt.savefig(_file)
+    print("Graphic saved")
+    logger.info("Graphic saved")
+    plt.show()
+
+
 def vm(buffer,logger, date):
     global X_t, Y_t,d0_w,d1_w,d2_w, X_matr_img
     model_obj: keras.models.Model = None
@@ -255,7 +259,7 @@ def vm(buffer,logger, date):
                     json.dump(wei_dic,f)
                     print("Json weights written")
                     logger.info("Json weights written")
-        elif op==learn_mult_class:
+        elif op==get_mult_class_matr:
             pix_am=steck[sp]
             sp-=1
             path_=steck_str[sp_str]
@@ -418,37 +422,52 @@ def vm(buffer,logger, date):
             arg=buffer[ip]
             opt, loss_obj, metrics=arg
             model_obj.compile(optimizer=opt, loss=loss_obj, metrics=metrics)
-        elif op==fit_net:
+        elif op==fit_net:  # 1-ep 2-bach_size 3-validation_split 4-shuffle 5-callbacks
             ip+=1
             arg=buffer[ip]
-            ep,ba_size,val_spl,callbacks=arg
+            ep,ba_size,val_spl,shuffle,callbacks=arg
             history=model_obj.fit(X_t, Y_t, epochs=ep,
                           batch_size=ba_size,
-            validation_split=val_spl, callbacks=callbacks)
+            validation_split=val_spl, shuffle=shuffle, callbacks=callbacks)
         else:
-            raise RuntimeError("Unknown bytecode -> %d"%op)
+            raise RuntimeError("Unknown bytecode -> %d."%op)
         ip+=1
-        op=buffer[ip]
+        try:
+          op=buffer[ip]
+        except IndexError:
+            raise RuntimeError('It seems somewhere'
+                               ' skipped argument of bytecode.')
 
 
 opt = SGD(lr=0.01)
-compile_pars = (opt, 'mse', ['accuracy'])
+# 1-optimizer 2-loss_function 3-metrics
+compile_pars = (opt, 'binary_crossentropy', ['accuracy'])
 monitor_pars=('val_accuracy')
 def adap_lr(epoch):
-    return 0.01*epoch
+    return 0.001*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr)
-fit_pars=(10, 1, 1, [my_lr_scheduler])
+# 1-ep 2-bach_size 3-validation_split 4-shuffle 5-callbacks
+fit_pars=(10, 10, 1, False, [my_lr_scheduler])
 my_init=My_const_init(9)
 ke_init=("glorot_uniform",my_init)
 
 
 if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__,'a')
-    p17=(push_i,10000,push_str,'B:\\msys64\\home\\msys_u\\img\\tmp',learn_mult_class,
-         make_net,('S', ('D','D','D'), (10000,3000,10,2),('r','r','S'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
+    p17=(push_i,10000,push_str,r'B:\msys64\home\msys_u\code\python\keras_shel_co\train_ann\train',get_mult_class_matr,
+         make_net,('S', ('D','D','D'), (10000,3000,800,2),('s','s','S'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
          k_summary,
          compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
-         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),
+         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3], fit_pars[4]),
+         evalu_,
+         predict,
+         sav_model_wei,
+         plot_train,"Tuples and Circs",
+         stop)
+    p18=(push_i,10000,push_str,r'B:\msys64\home\msys_u\code\python\keras_shel_co\train_ann\ask',get_mult_class_matr,
+         load_model_wei,
+         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
+         evalu_,
          predict,
          stop)
     console('>>>', p17, loger, date)
