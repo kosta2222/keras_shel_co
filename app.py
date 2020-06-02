@@ -2,6 +2,7 @@ from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
+from  keras.layers import Layer
 
 import numpy as np
 from util import get_logger
@@ -17,18 +18,21 @@ Y = np.array(or_Y)
 
 act_funcs=('tanh','tanh','sigmoid')
 init_lays=(2, 3, 3, 1)
+us_bias=(False, True)
 len_nn_lays=len(init_lays) - 1
 opt=SGD(lr=0.07)
 compile_pars=(opt, 'mse', ['accuracy'] )
 monitor_pars=('val_accuracy')
-fit_pars=(150, 1)
+fit_pars=(80, 1)
+def my_init(shape,dtype=None):
+    return np.zeros(shape,dtype=dtype)+0.5674321
 def create_nn():
     model = Sequential()
-    d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0],bias_initializer='zeros')
+    d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0],use_bias=us_bias[1],kernel_initializer=my_init)
     model.add(d0)
-    d1=Dense(init_lays[2], activation=act_funcs[1])
+    d1=Dense(init_lays[2], activation=act_funcs[1], use_bias=us_bias[1],kernel_initializer=my_init)
     model.add(d1)
-    d2=Dense(init_lays[3], activation=act_funcs[2])
+    d2=Dense(init_lays[3], activation=act_funcs[2], use_bias=us_bias[1],kernel_initializer=my_init)
     model.add(d2)
     return model,d0,d1,d2
 def fit_nn(X,Y):
@@ -62,9 +66,10 @@ cl_log=8
 sav_model_wei=9
 load_model_wei=10
 get_weis=11
-stop = 12  # stop добавляется в скрипте если we_run
-ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis")
-def console(prompt, level, progr=[],loger=None, date=None):
+on_contrary=12
+stop = 13  # stop добавляется в скрипте если we_run
+ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary")
+def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
         buffer = [0] * len_ * 2  # байт-код для шелл-кода
         input_ = '<uninitialized>'
@@ -95,7 +100,7 @@ def console(prompt, level, progr=[],loger=None, date=None):
             elif input_ == we_run:
                pos_bytecode += 1
                buffer[pos_bytecode] = stop
-               vm(buffer, level)
+               vm(buffer, loger, date)
                pos_bytecode = -1
         splitted_cmd_src = input_.split()
         for pos_to_write in range(len(splitted_cmd_src)):
@@ -118,7 +123,7 @@ def console(prompt, level, progr=[],loger=None, date=None):
                 splitted_cmd[1] = ''
                 break
     else:
-       vm(progr,level,loger,date)
+       vm(progr,loger,date)
             
             
 len_=256
@@ -128,7 +133,7 @@ model_obj=None
 d0:Dense=None
 d1:Dense=None
 d2:Dense=None
-def vm(buffer, level,logger, date):
+def vm(buffer,logger, date):
     global model_obj, X_t, Y_t,d0,d1,d2
     # logger=get_logger(level)
     # today=d.datetime.today()
@@ -207,9 +212,37 @@ def vm(buffer, level,logger, date):
             print("Loaded model and weights")
             logger.info("Loaded model and weights")
         elif op==get_weis:
-            loger.debug(f'd0 {d0.get_weights()}\n')
-            loger.debug(f'd1 {d1.get_weights()}\n')
-            loger.debug(f'd2 {d2.get_weights()}\n')
+            l=[]
+            # d0=d0.get_weights()
+            # d1=d1.get_weights()
+            # d2=d2.get_weights()
+            for i in range(len(model_obj.layers)):
+               l.append(model_obj.layers[i].get_weights())
+            d0,d1,d2=l
+            loger.debug(f'd0 {d0}\n')
+            loger.debug(f'd1 {d1}\n')
+            loger.debug(f'd2 {d2}\n')
+        elif op==on_contrary:
+            model1 = Sequential()
+            l0 = Dense(3, activation='sigmoid', use_bias=True)
+            l0.build((None,1))
+            ke2, bi2=d2
+            # d2=np.array(d2)
+            # d2=d2.T
+            # d2=np.hstack((ke2.T,np.array([bi2])))
+            l0.set_weights(np.array([ke2.T]))
+            # l0.set_weights([d2])
+
+            print("ge wei",l0.get_weights())
+            # model1.add(l0)
+            # model1.layers[0].set_weights(d2)
+            # d1 = Dense(3, activation='tanh')
+            # d1.set_weights(d1)
+            # model1.add(d1)
+            # d2 = Dense(2, activation='sigmoid')
+            # model1.set_weights(d0)
+            # model1.add(d2)
+            # loger.info(f'predict: {model1.predict([[1]])}\n')
         else:
             print("Unknown bytecode -> %d"%op)
             return
@@ -218,8 +251,9 @@ def vm(buffer, level,logger, date):
 
 if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__)
-    p=[cr_nn_,fit_,predict,get_weis,stop]
-    console('>>>','debug', p, loger, date)
+    p1=(cr_nn_,fit_,predict,sav_model_wei,stop)
+    p2=(load_model_wei,get_weis,on_contrary,stop)
+    console('>>>','debug', p1, loger, date)
 
 
 
