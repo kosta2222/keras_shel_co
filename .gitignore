@@ -11,3 +11,6 @@ dist/
 nbproject/
 *.json
 *.h5
+*.txt
+*.log
+*log*

@@ -24,13 +24,13 @@ monitor_pars=('val_accuracy')
 fit_pars=(150, 1)
 def create_nn():
     model = Sequential()
-    d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0])
+    d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0],bias_initializer='zeros')
     model.add(d0)
     d1=Dense(init_lays[2], activation=act_funcs[1])
     model.add(d1)
     d2=Dense(init_lays[3], activation=act_funcs[2])
     model.add(d2)
-    return model
+    return model,d0,d1,d2
 def fit_nn(X,Y):
     es=EarlyStopping(monitor=monitor_pars[0])
     model_obj.compile(optimizer=compile_pars[0], loss=compile_pars[1], metrics=compile_pars[2])
@@ -61,8 +61,9 @@ determe_X_Y=7
 cl_log=8
 sav_model_wei=9
 load_model_wei=10
-stop = 11  # stop добавляется в скрипте если we_run
-ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei")
+get_weis=11
+stop = 12  # stop добавляется в скрипте если we_run
+ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis")
 def console(prompt, level, progr=[],loger=None, date=None):
     if len(progr)==0:
         buffer = [0] * len_ * 2  # байт-код для шелл-кода
@@ -124,8 +125,11 @@ len_=256
 X_t=X  #  по умолчанию
 Y_t=Y
 model_obj=None
+d0:Dense=None
+d1:Dense=None
+d2:Dense=None
 def vm(buffer, level,logger, date):
-    global model_obj, X_t, Y_t
+    global model_obj, X_t, Y_t,d0,d1,d2
     # logger=get_logger(level)
     # today=d.datetime.today()
     # today_s=today.strftime('%x %X')
@@ -153,9 +157,13 @@ def vm(buffer, level,logger, date):
             ip += 1
             steck_str[sp_str] = buffer[ip]
         elif op==cr_nn_:
-           model_obj=create_nn()
+           model_obj,d0, d1, d2=create_nn()
            print("Model created ",model_obj)
+           d0=d0
+           d1=d1
+           d2=d2
            logger.debug(f'Model created {model_obj}')
+           loger.debug(f'd0 bef {d0.get_weights()}')
         elif op==determe_X_Y:
             var_Y = steck_str[sp_str]
             sp_str -= 1
@@ -169,6 +177,7 @@ def vm(buffer, level,logger, date):
             logger.debug(f'Data X Y (found): \nX = {X}  \nY={Y}')
         elif op==fit_:
             fit_nn(X_t, Y_t)
+            loger.debug(f'd0  {d0.get_weights()}')
         elif op==predict:
             out_nn=pred(X_t)
             print("Predict matr: ",out_nn)
@@ -198,6 +207,10 @@ def vm(buffer, level,logger, date):
             model_obj.load_weights('wei.h5')
             print("Loaded model and weights")
             logger.info("Loaded model and weights")
+        elif op==get_weis:
+            loger.debug(f'd0 {d0.get_weights()}\n')
+            loger.debug(f'd1 {d1.get_weights()}\n')
+            loger.debug(f'd2 {d2.get_weights()}\n')
         else:
             print("Unknown bytecode -> %d"%op)
             return
@@ -206,7 +219,7 @@ def vm(buffer, level,logger, date):
 
 if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__)
-    p=[cr_nn_,fit_,predict,stop]
+    p=[cr_nn_,fit_,predict,get_weis,stop]
     console('>>>','debug', p, loger, date)
 
 
