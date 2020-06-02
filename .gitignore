@@ -1,0 +1,13 @@
+*.back
+*.bac
+*.bak
+*.bash
+.idea/
+venv/
+__pycache__/
+Makefile
+build/
+dist/
+nbproject/
+*.json
+*.h5
