@@ -163,7 +163,6 @@ def vm(buffer, level,logger, date):
            d1=d1
            d2=d2
            logger.debug(f'Model created {model_obj}')
-           loger.debug(f'd0 bef {d0.get_weights()}')
         elif op==determe_X_Y:
             var_Y = steck_str[sp_str]
             sp_str -= 1
