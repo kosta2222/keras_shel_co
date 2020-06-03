@@ -2,11 +2,11 @@ from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
-from  keras.layers import Layer
-
 import numpy as np
 from util import get_logger
-import datetime as d
+from keras.callbacks import LearningRateScheduler
+import json
+# from  keras.optimizers import
 """
 Замечания: для Python3 с f строками(используются в логинге)
 """
@@ -20,25 +20,34 @@ act_funcs=('tanh','tanh','sigmoid')
 init_lays=(2, 3, 3, 1)
 us_bias=(False, True)
 len_nn_lays=len(init_lays) - 1
-opt=SGD(lr=0.07)
+opt=SGD(lr=0.01)
 compile_pars=(opt, 'mse', ['accuracy'] )
 monitor_pars=('val_accuracy')
 fit_pars=(80, 1)
+def adap_lr(epoch):
+    return 0.8*epoch
+my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
 def my_init(shape,dtype=None):
     return np.zeros(shape,dtype=dtype)+0.5674321
-def create_nn():
+ke_init=("glorot_uniform",my_init)
+def create_nn(is_my_init):
+    k_i=None
+    if is_my_init:
+      k_i=ke_init[1]
+    else:
+        k_i=ke_init[0]
     model = Sequential()
-    d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0],use_bias=us_bias[1],kernel_initializer=my_init)
+    d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0],use_bias=us_bias[0],kernel_initializer=k_i)
     model.add(d0)
-    d1=Dense(init_lays[2], activation=act_funcs[1], use_bias=us_bias[1],kernel_initializer=my_init)
+    d1=Dense(init_lays[2], activation=act_funcs[1], use_bias=us_bias[0],kernel_initializer=k_i)
     model.add(d1)
-    d2=Dense(init_lays[3], activation=act_funcs[2], use_bias=us_bias[1],kernel_initializer=my_init)
+    d2=Dense(init_lays[3], activation=act_funcs[2], use_bias=us_bias[0],kernel_initializer=k_i)
     model.add(d2)
     return model,d0,d1,d2
 def fit_nn(X,Y):
     es=EarlyStopping(monitor=monitor_pars[0])
     model_obj.compile(optimizer=compile_pars[0], loss=compile_pars[1], metrics=compile_pars[2])
-    model_obj.fit(X, Y, epochs=fit_pars[0], validation_split=fit_pars[1])
+    model_obj.fit(X, Y, epochs=fit_pars[0], validation_split=fit_pars[1],callbacks=[my_lr_scheduler])
 
 
 def pred(X):
@@ -130,11 +139,14 @@ len_=256
 X_t=X  #  по умолчанию
 Y_t=Y
 model_obj=None
-d0:Dense=None
-d1:Dense=None
-d2:Dense=None
+d0=None
+d1=None
+d2=None
+d0_w=None
+d1_w=None
+d2_w=None
 def vm(buffer,logger, date):
-    global model_obj, X_t, Y_t,d0,d1,d2
+    global model_obj, X_t, Y_t,d0_w,d1_w,d2_w
     # logger=get_logger(level)
     # today=d.datetime.today()
     # today_s=today.strftime('%x %X')
@@ -162,7 +174,7 @@ def vm(buffer,logger, date):
             ip += 1
             steck_str[sp_str] = buffer[ip]
         elif op==cr_nn_:
-           model_obj,d0, d1, d2=create_nn()
+           model_obj,d0, d1, d2=create_nn(True)
            print("Model created ",model_obj)
            d0=d0
            d1=d1
@@ -204,13 +216,21 @@ def vm(buffer,logger, date):
             print("Weights saved")
             logger.info('Weights saved')
         elif op==load_model_wei:
-            loaded_json_model=''
-            with open('model_json.json','r') as f:
-                loaded_json_model=f.read()
-            model_obj=model_from_json(loaded_json_model)
-            model_obj.load_weights('wei.h5')
-            print("Loaded model and weights")
-            logger.info("Loaded model and weights")
+            try:
+               # loaded_json_model=''
+               # with open('model_json.json','r') as f:
+               #    loaded_json_model=f.read()
+               # model_obj=model_from_json(loaded_json_model)
+               model_obj,_,_,_=create_nn(False)
+               model_obj.load_weights('wei.h5')
+               print("Loaded model and weights")
+               logger.info("Loaded model and weights")
+            except Exception as e:
+                print("Exc in load_model_wei")
+                print(e.args)
+                ip+=1
+                op=buffer[ip]
+                continue
         elif op==get_weis:
             l=[]
             # d0=d0.get_weights()
@@ -218,19 +238,22 @@ def vm(buffer,logger, date):
             # d2=d2.get_weights()
             for i in range(len(model_obj.layers)):
                l.append(model_obj.layers[i].get_weights())
-            d0,d1,d2=l
-            loger.debug(f'd0 {d0}\n')
-            loger.debug(f'd1 {d1}\n')
-            loger.debug(f'd2 {d2}\n')
+            d0_w,d1_w,d2_w=l
+            loger.debug(f'd0 {d0_w}\n')
+            loger.debug(f'd1 {d1_w}\n')
+            loger.debug(f'd2 {d2_w}\n')
         elif op==on_contrary:
             model1 = Sequential()
             l0 = Dense(3, activation='sigmoid', use_bias=True)
             l0.build((None,1))
-            ke2, bi2=d2
+            ke2, bi2=d2_w
+            print("ke2",ke2,"bi2",bi2)
             # d2=np.array(d2)
             # d2=d2.T
             # d2=np.hstack((ke2.T,np.array([bi2])))
-            l0.set_weights(np.array([ke2.T]))
+            print("ke2 ri",[ke2.T])
+            new_te_d2_w=np.array([ke2.T, bi2])
+            l0.set_weights(new_te_d2_w)
             # l0.set_weights([d2])
 
             print("ge wei",l0.get_weights())
@@ -253,7 +276,7 @@ if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__)
     p1=(cr_nn_,fit_,predict,sav_model_wei,stop)
     p2=(load_model_wei,get_weis,on_contrary,stop)
-    console('>>>','debug', p1, loger, date)
+    console('>>>', p1, loger, date)
 
 
 
