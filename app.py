@@ -243,20 +243,28 @@ def vm(buffer,logger, date):
             loger.debug(f'd1 {d1_w}\n')
             loger.debug(f'd2 {d2_w}\n')
         elif op==on_contrary:
-            model1 = Sequential()
-            l0 = Dense(3, activation='sigmoid', use_bias=True)
+            model_new = Sequential()
+            l0 = Dense(3, activation='sigmoid', use_bias=False)
             l0.build((None,1))
-            ke2, bi2=d2_w
-            print("ke2",ke2,"bi2",bi2)
-            # d2=np.array(d2)
-            # d2=d2.T
-            # d2=np.hstack((ke2.T,np.array([bi2])))
-            print("ke2 ri",[ke2.T])
-            new_te_d2_w=np.array([ke2.T, bi2])
-            l0.set_weights(new_te_d2_w)
+            ke2=d2_w[0]
+            l0.set_weights([ke2.T])
             # l0.set_weights([d2])
+            # print("ke2 ri",ke2)
+            model_new.add(l0)
+            l1 = Dense(3, activation='tanh', use_bias=False)
+            l1.build((None,3))
+            ke1=d1_w[0]
+            l1.set_weights([ke1.T])
+            model_new.add(l1)
+            l2 = Dense(2, activation='tanh', use_bias=False)
+            l2.build((None,3))
+            ke0=d0_w[0]
+            l2.set_weights([ke0.T])
+            model_new.add(l2)
+            loger.info(f'predict cont {model_new.predict(np.array([[0]]))}')
 
-            print("ge wei",l0.get_weights())
+
+            # print("ge wei",l0.get_weights())
             # model1.add(l0)
             # model1.layers[0].set_weights(d2)
             # d1 = Dense(3, activation='tanh')
@@ -276,7 +284,7 @@ if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__)
     p1=(cr_nn_,fit_,predict,sav_model_wei,stop)
     p2=(load_model_wei,get_weis,on_contrary,stop)
-    console('>>>', p1, loger, date)
+    console('>>>', p2, loger, date)
 
 
 
