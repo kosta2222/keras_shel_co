@@ -296,7 +296,7 @@ def vm(buffer,logger, date):
             # loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
             print("out_nn", str(out_nn))
             # p_vec_tested = calc_out_nn(out_nn.tolist()[0])
-            p_2d_img:np.ndarray = make_2d_arr(out_nn[0]*255)
+            p_2d_img = make_2d_arr(out_nn[0]*100)
             new_img = Image.fromarray(np.uint8(p_2d_img))
             new_img.save("img_net.png")
         else:
