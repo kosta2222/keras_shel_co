@@ -3,21 +3,17 @@ from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
 import numpy as np
-from util import get_logger
+from util import get_logger, make_train_matr, calc_out_nn, make_2d_arr
 from keras.callbacks import LearningRateScheduler
+from PIL import Image
 import json
 # from  keras.optimizers import
 """
 Замечания: для Python3 с f строками(используются в логинге)
 """
-
-or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
-or_Y = [[1], [1], [1], [0]]
-X = np.array(or_X)
-Y = np.array(or_Y)
-
 act_funcs=('tanh','tanh','sigmoid')
-init_lays=(2, 3, 3, 1)
+init_lays=(10000, 10, 8, 1)
+# init_lays=(2, 3, 3, 1)
 us_bias=(False, True)
 len_nn_lays=len(init_lays) - 1
 opt=SGD(lr=0.01)
@@ -38,7 +34,8 @@ def create_nn(is_my_init):
         k_i=ke_init[0]
     model = Sequential()
     d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0],use_bias=us_bias[0],kernel_initializer=k_i)
-    model.add(d0)
+    model.add(d0)  # d0.input_shape
+    # print("in create nn d0 pars")
     d1=Dense(init_lays[2], activation=act_funcs[1], use_bias=us_bias[0],kernel_initializer=k_i)
     model.add(d1)
     d2=Dense(init_lays[3], activation=act_funcs[2], use_bias=us_bias[0],kernel_initializer=k_i)
@@ -76,8 +73,10 @@ sav_model_wei=9
 load_model_wei=10
 get_weis=11
 on_contrary=12
-stop = 13  # stop добавляется в скрипте если we_run
-ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary")
+make_X_matr_img_=13
+make_img_=14
+stop = 15  # stop добавляется в скрипте если we_run
+ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img")
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
         buffer = [0] * len_ * 2  # байт-код для шелл-кода
@@ -136,17 +135,22 @@ def console(prompt, progr=[],loger=None, date=None):
             
             
 len_=256
-X_t=X  #  по умолчанию
-Y_t=Y
 model_obj=None
-d0=None
-d1=None
-d2=None
 d0_w=None
 d1_w=None
 d2_w=None
+X_matr_img=None
+Y_matr_img=np.array([[1],[1],[1],[1]])
+or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
+or_Y = [[1], [1], [1], [0]]
+X = np.array(or_X)
+Y = np.array(or_Y)
+X_t=None
+Y_t=None
+X_t=X  #  по умолчанию
+Y_t=Y
 def vm(buffer,logger, date):
-    global model_obj, X_t, Y_t,d0_w,d1_w,d2_w
+    global model_obj, X_t, Y_t,d0_w,d1_w,d2_w, X_matr_img
     # logger=get_logger(level)
     # today=d.datetime.today()
     # today_s=today.strftime('%x %X')
@@ -174,11 +178,9 @@ def vm(buffer,logger, date):
             ip += 1
             steck_str[sp_str] = buffer[ip]
         elif op==cr_nn_:
-           model_obj,d0, d1, d2=create_nn(True)
+           model_obj_,d0, d1, d2=create_nn(True)
+           model_obj=model_obj_
            print("Model created ",model_obj)
-           d0=d0
-           d1=d1
-           d2=d2
            logger.debug(f'Model created {model_obj}')
         elif op==determe_X_Y:
             var_Y = steck_str[sp_str]
@@ -189,8 +191,16 @@ def vm(buffer,logger, date):
             var_iner_X=globals().get(var_X, 'Not found %s'.format(var_Y))
             X_t=var_iner_X
             Y_t=var_iner_Y
-            print(f"Data X Y (found): \nX = {X}  \nY={Y}")
-            logger.debug(f'Data X Y (found): \nX = {X}  \nY={Y}')
+            print("( Data found )")
+            # print(f"Data X Y (found): \nX = {X}  \nY={Y}")
+            # logger.debug(f'Data X Y (found): \nX = {X}  \nY={Y}')
+        elif op == make_X_matr_img_:
+            X_img: np.ndarray = None
+            path_s = steck_str[sp_str]
+            sp_str -= 1
+            X_img = make_train_matr(path_s)
+            X_matr_img=np.array(X_img)
+            X_matr_img /= 255
         elif op==fit_:
             fit_nn(X_t, Y_t)
             loger.debug(f'd0  {d0.get_weights()}')
@@ -239,9 +249,9 @@ def vm(buffer,logger, date):
             for i in range(len(model_obj.layers)):
                l.append(model_obj.layers[i].get_weights())
             d0_w,d1_w,d2_w=l
-            loger.debug(f'd0 {d0_w}\n')
-            loger.debug(f'd1 {d1_w}\n')
-            loger.debug(f'd2 {d2_w}\n')
+            # loger.debug(f'd0 {d0_w}\n')
+            # loger.debug(f'd1 {d1_w}\n')
+            # loger.debug(f'd2 {d2_w}\n')
         elif op==on_contrary:
             model_new = Sequential()
             l0 = Dense(3, activation='sigmoid', use_bias=False)
@@ -261,19 +271,34 @@ def vm(buffer,logger, date):
             ke0=d0_w[0]
             l2.set_weights([ke0.T])
             model_new.add(l2)
-            loger.info(f'predict cont {model_new.predict(np.array([[0]]))}')
-
-
-            # print("ge wei",l0.get_weights())
-            # model1.add(l0)
-            # model1.layers[0].set_weights(d2)
-            # d1 = Dense(3, activation='tanh')
-            # d1.set_weights(d1)
-            # model1.add(d1)
-            # d2 = Dense(2, activation='sigmoid')
-            # model1.set_weights(d0)
-            # model1.add(d2)
-            # loger.info(f'predict: {model1.predict([[1]])}\n')
+            loger.info(f'predict cont {model_new.predict(np.array([[1]]))}')
+        elif op == make_img_:
+            model_new = Sequential()
+            l0 = Dense(8, activation='sigmoid', use_bias=False)
+            l0.build((None,1))
+            ke2=d2_w[0]
+            l0.set_weights([ke2.T])
+            # l0.set_weights([d2])
+            # print("ke2 ri",ke2)
+            model_new.add(l0)
+            l1 = Dense(10, activation='tanh', use_bias=False)
+            l1.build((None,8))
+            ke1=d1_w[0]
+            l1.set_weights([ke1.T])
+            model_new.add(l1)
+            l2 = Dense(10000, activation='tanh', use_bias=False)
+            l2.build((None,10))
+            ke0=d0_w[0]
+            l2.set_weights([ke0.T])
+            model_new.add(l2)
+            out_nn = model_new.predict(np.array([[1]]))
+            loger.debug("in make_img")
+            # loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
+            print("out_nn", str(out_nn))
+            # p_vec_tested = calc_out_nn(out_nn.tolist()[0])
+            p_2d_img = make_2d_arr(out_nn[0]*100)
+            new_img = Image.fromarray(np.uint8(p_2d_img))
+            new_img.save("img_net.png")
         else:
             print("Unknown bytecode -> %d"%op)
             return
@@ -284,7 +309,10 @@ if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__)
     p1=(cr_nn_,fit_,predict,sav_model_wei,stop)
     p2=(load_model_wei,get_weis,on_contrary,stop)
-    console('>>>', p2, loger, date)
+    p3=(cr_nn_,push_str,'b:/src',make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
+        fit_,predict,sav_model_wei,stop)
+    p4=(load_model_wei,get_weis,make_img_,stop)
+    console('>>>', p4, loger, date)
 
 
 
