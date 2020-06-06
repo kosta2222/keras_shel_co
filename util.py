@@ -73,7 +73,7 @@ def make_train_img_matr(p_: str,rows,elems) -> np.ndarray:
         data = list(img.getdata())
         matr[cn_img] = data
         cn_img+=1
-    return matr
+    return matr.tolist()
 
 
 def _0_(str_):
