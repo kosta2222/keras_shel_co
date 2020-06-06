@@ -28,6 +28,19 @@ def calc_list(list_:list):
             continue
     return cn_elem
 
+def l_test_after_contr(l_:list,n):
+    l_new=[0]*n
+    max_=max(l_)
+    min_=min(l_)
+    for i in range(len(l_)):
+        if l_[i]==max_:
+            l_new[i]=1
+        elif l_[i]==min_:
+            l_new[i]=0
+    return l_new
+
+
+
 
 def calc_out_nn(l_: list):
     l_tested = [0] * 10000

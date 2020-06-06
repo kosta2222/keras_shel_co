@@ -3,26 +3,27 @@ from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
 import numpy as np
-from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr
+from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr
 from keras.callbacks import LearningRateScheduler
 from PIL import Image
-import json
+
 # from  keras.optimizers import
 """
 Замечания: для Python3 с f строками(используются в логинге)
 """
-act_funcs=('softmax','tanh','sigmoid')
+act_funcs=('relu','relu','softmax')
 # init_lays=(10000, 10, 8, 1)
-# init_lays=(2, 3, 3, 1)
-init_lays=(10000,1)
+init_lays=(4, 3, 3, 2)
+# init_lays=(10000,1)
+# init_lays=(3,2)
 us_bias=(False, True)
 len_nn_lays=len(init_lays) - 1
 opt=SGD(lr=0.01)
-compile_pars=(opt, 'mse', ['accuracy'] )
+compile_pars=(opt, 'categorical_crossentropy', ['accuracy'] )
 monitor_pars=('val_accuracy')
-fit_pars=(80, 1)
+fit_pars=(120, 1)
 def adap_lr(epoch):
-    return 0.01*epoch
+    return 0.001*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
 def my_init(shape,dtype=None):
     return np.zeros(shape,dtype=dtype)+0.5674321
@@ -37,10 +38,10 @@ def create_nn(is_my_init):
     d0=Dense(init_lays[1], input_dim=init_lays[0], activation=act_funcs[0],use_bias=us_bias[1],kernel_initializer=k_i)
     model.add(d0)  # d0.input_shape
     # print("in create nn d0 pars")
-    # d1=Dense(init_lays[2], activation=act_funcs[1], use_bias=us_bias[1],kernel_initializer=k_i)
-    # model.add(d1)
-    # d2=Dense(init_lays[3], activation=act_funcs[2], use_bias=us_bias[1],kernel_initializer=k_i)
-    # model.add(d2)
+    d1=Dense(init_lays[2], activation=act_funcs[1], use_bias=us_bias[1],kernel_initializer=k_i)
+    model.add(d1)
+    d2=Dense(init_lays[3], activation=act_funcs[2], use_bias=us_bias[1],kernel_initializer=k_i)
+    model.add(d2)
     return model#,d1,d2
 def fit_nn(X,Y):
     es=EarlyStopping(monitor=monitor_pars[0])
@@ -54,12 +55,6 @@ def pred(X):
 def evalu(X, Y):
     los_func_metr_and_scores=model_obj.evaluate(X, Y)
     return los_func_metr_and_scores
-
-or_X=[[1, 1], [1, 0], [0, 1], [0, 0]]
-or_Y=[[1], [1], [1], [0]]
-or_X_np=np.array(or_X)
-or_Y_np=np.array(or_Y)
-
 len_=10
 push_i = 0
 push_fl = 1
@@ -146,6 +141,8 @@ Y_matr_img=np.array([[1],[1],[1],[1]])
 Y_matr_img_one=np.array([[1]])
 or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
 or_Y = [[1], [1], [1], [0]]
+X_comp=np.array([[0,1,0,1]])
+Y_comp=np.array([[0,1]])
 X = np.array(or_X)
 Y = np.array(or_Y)
 X_t=None
@@ -250,7 +247,7 @@ def vm(buffer,logger, date):
                 op=buffer[ip]
                 continue
         elif op==get_weis:
-            l=[]
+            # l=[]
             # d0=d0.get_weights()
             # d1=d1.get_weights()
             # d2=d2.get_weights()
@@ -267,11 +264,11 @@ def vm(buffer,logger, date):
             # m.add(t)
             # print("t wei",t.get_weights())
             #
-            from keras.constraints import max_norm
-            dw0,dw1,dw2=l_weis
+            d0_w,d1_w,d2_w=l_weis
+            # d2_w=l_weis[0]
             model_new = Sequential()
             l0 = Dense(3, activation=act_funcs[2], use_bias=True)
-            l0.build((None,1))
+            l0.build((None,2))
             ke2, bi2=d2_w
             bi2_n=np.zeros(3)+bi2[0]
             print("bi2",bi2)
@@ -284,14 +281,16 @@ def vm(buffer,logger, date):
             ke1,bi1=d1_w
             l1.set_weights([ke1.T,bi1])
             model_new.add(l1)
-            l2 = Dense(2, activation=act_funcs[0], use_bias=True)
+            l2 = Dense(4, activation=act_funcs[0], use_bias=True)
             l2.build((None,3))
             ke0,be0=d0_w
-            print("ke0",ke0)
-            # print("bi0",bi0)
-            l2.set_weights([ke0.T,be0[:2]])
+            be0_n=np.zeros(4)+be0[0]
+            l2.set_weights([ke0.T,be0_n])
             model_new.add(l2)
-            loger.info(f'predict cont {model_new.predict(np.array([[0]]))}')
+            out_nn=model_new.predict(np.array([[0,1]]))
+            loger.info(f'predict cont {out_nn}')
+            tes_out_nn=l_test_after_contr(out_nn.tolist()[0],4)
+            logger.debug(f'vec izn {tes_out_nn}')
         elif op == make_img_:
             dw0,dw1,dw2=l_weis
             model_new = Sequential()
@@ -353,7 +352,9 @@ if __name__ == '__main__':
     p4=(load_model_wei,get_weis,make_img_,stop)
     p5=(push_str,'b:/src1',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p6=(load_model_wei,get_weis,make_img_one_decomp,stop)
-    console('>>>', p6, loger, date)
+    p7=(push_str,'X_comp',push_str,'Y_comp',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
+    p8=(load_model_wei,get_weis,on_contrary,stop)
+    console('>>>', p8, loger, date)
 
 
 
