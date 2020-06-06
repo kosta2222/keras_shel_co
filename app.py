@@ -137,8 +137,8 @@ d0_w=None
 d1_w=None
 d2_w=None
 X_matr_img=None
-Y_matr_img=np.array([[0,1],[0,1],[0,1],[0,1]])
-Y_matr_img_one=np.array([[1]])
+Y_matr_img=np.array([[0,1]])
+Y_matr_img_one=np.array([[0,1]])
 or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
 or_Y = [[1], [1], [1], [0]]
 X_comp=np.array([[0,1,0,1]])
@@ -204,9 +204,9 @@ def vm(buffer,logger, date):
             rows=steck[sp]
             sp-=1
             X_img = make_train_img_matr(path_s,rows,elems)
-            X_matr_img=np.array(X_img,dtype='float64')
-            # X_matr_img /= 255
-            X_matr_img-=np.mean(X_matr_img,axis=0,dtype='float64')
+            X_matr_img=np.array(X_img)
+            X_matr_img /= 255
+            # X_matr_img-=np.mean(X_matr_img,axis=0,dtype='float64')
             # X_matr_img /= 255
             # X_matr_img=np.std(X_matr_img_n,axis=0,dtype='float64')
             # X_matr_img /= 255
@@ -332,19 +332,19 @@ def vm(buffer,logger, date):
             dw0, ke0= l_weis[0]
             model_new = Sequential()
             l0 = Dense(10000, activation=act_funcs[0], use_bias=True)
-            l0.build((None, 1))
+            l0.build((None, 2))
             model_new.add(l0)
             ke0_n=np.zeros(10000)+ke0[0]
             l0.set_weights([dw0.T,ke0_n])
-            out_nn = model_new.predict(np.array([[1]]))
+            out_nn = model_new.predict(np.array([[0,1]]))
             loger.debug("in make_img")
             # loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
             print("out_nn", str(out_nn))
             loger.debug(f'vse odinak {np.all(out_nn == out_nn[0])}')
-            p_vec_tested = calc_out_nn(out_nn.tolist()[0])
-            p_2d_img: np.ndarray = make_2d_arr(p_vec_tested)
-            new_img = Image.fromarray(np.uint8(p_2d_img))
-            new_img.save("img_net.png")
+            # p_vec_tested = calc_out_nn(out_nn.tolist()[0])
+            # p_2d_img: np.ndarray = make_2d_arr(p_vec_tested)
+            # new_img = Image.fromarray(np.uint8(p_2d_img))
+            # new_img.save("img_net.png")
         else:
             print("Unknown bytecode -> %d"%op)
             return
@@ -362,7 +362,9 @@ if __name__ == '__main__':
     p6=(load_model_wei,get_weis,make_img_one_decomp,stop)
     p7=(push_str,'X_comp',push_str,'Y_comp',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p8=(load_model_wei,get_weis,on_contrary,stop)
-    console('>>>', p4, loger, date)
+    p9=(push_str,'b:/src1',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
+    p10=(load_model_wei,get_weis,make_img_one_decomp,stop)
+    console('>>>', p10, loger, date)
 
 
 
