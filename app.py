@@ -13,7 +13,7 @@ from PIL import Image
 """
 act_funcs=('softmax','relu','softmax')
 # init_lays=(10000, 10, 8, 2)
-# init_lays=(4, 3, 3, 2)
+# init_lays=(10, 3, 3, 2)
 init_lays=(10000,2)
 # init_lays=(3,2)
 us_bias=(False, True)
@@ -137,11 +137,11 @@ d0_w=None
 d1_w=None
 d2_w=None
 X_matr_img=None
-Y_matr_img=np.array([[0,1]])
+Y_matr_img=np.array([[0,1],[0,1],[0,1],[0,1]])
 Y_matr_img_one=np.array([[0,1]])
 or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
 or_Y = [[1], [1], [1], [0]]
-X_comp=np.array([[0,1,0,1]])
+X_comp=np.array([[0,1,0,1,1,1,0,1,0,0]])
 Y_comp=np.array([[0,1]])
 X = np.array(or_X)
 Y = np.array(or_Y)
@@ -205,7 +205,10 @@ def vm(buffer,logger, date):
             sp-=1
             X_img = make_train_img_matr(path_s,rows,elems)
             X_matr_img=np.array(X_img)
-            X_matr_img /= 255
+            X_matr_img.astype('float32')
+            X_matr_img/= 255.0
+            print("X matr img",X_matr_img.tolist())
+            logger.debug(f'in make X matr img ravni li: {np.all(X_matr_img==X_matr_img[0])}')
             # X_matr_img-=np.mean(X_matr_img,axis=0,dtype='float64')
             # X_matr_img /= 255
             # X_matr_img=np.std(X_matr_img_n,axis=0,dtype='float64')
@@ -285,16 +288,17 @@ def vm(buffer,logger, date):
             ke1,bi1=d1_w
             l1.set_weights([ke1.T,bi1])
             model_new.add(l1)
-            l2 = Dense(4, activation=act_funcs[0], use_bias=True)
+            l2 = Dense(10, activation=act_funcs[0], use_bias=True)
             l2.build((None,3))
             ke0,be0=d0_w
-            be0_n=np.zeros(4)+be0[0]
+            be0_n=np.zeros(10)+be0[0]
             l2.set_weights([ke0.T,be0_n])
             model_new.add(l2)
             out_nn=model_new.predict(np.array([[0,1]]))
             loger.info(f'predict cont {out_nn}')
-            tes_out_nn=l_test_after_contr(out_nn.tolist()[0],4)
+            tes_out_nn=l_test_after_contr(out_nn.tolist()[0],10)
             logger.debug(f'vec izn {tes_out_nn}')
+            logger.debug(f'ravini li: {X_comp==tes_out_nn}')
         elif op == make_img_:
             # d0_w,d1_w,d2_w=l_weis
             d0_w=l_weis[0]
@@ -320,14 +324,22 @@ def vm(buffer,logger, date):
             # l2.set_weights([ke0.T,bi0_n])
             # model_new.add(l2)
             out_nn = model_new.predict(np.array([[0,1]]))
-            loger.debug("in make_img")
             # loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
-            # print("out_nn", str(out_nn))
-            p_vec_tested_contr = l_test_after_contr(out_nn.tolist()[0],10000)
-            print(f'l tes vec contr {out_nn}')
-            # p_2d_img:np.ndarray = make_2d_arr(p_2d_img)
-            # new_img = Image.fromarray(np.uint8(p_2d_img))
-            # new_img.save("img_net.png")
+            # print("out_nn", out_nn.tolist())
+            l_test_after_contr_=l_test_after_contr(out_nn.tolist()[0],10000)
+            # print("l test af contr",l_test_after_contr_)
+            # print(all([0.00010001]*10000==out_nn.tolist()))
+            vec_tested = calc_out_nn(l_test_after_contr_)
+            # print("vec tested",vec_tested)
+            # print(X_matr_img[0].tolist()==vec_tested)
+            # _2d_img: np.ndarray = make_2d_arr(vec_tested)
+            vec_tested_np=np.array(vec_tested)
+            img_prep=vec_tested_np.reshape(100,100)
+            img_prep=img_prep.astype('uint8')
+            new_img = Image.fromarray(img_prep,'L')
+            new_img.save("img_net_creative.png")
+            print("Img written")
+            loger.debug("in make_img")
         elif op == make_img_one_decomp:
             dw0, ke0= l_weis[0]
             model_new = Sequential()
@@ -339,12 +351,20 @@ def vm(buffer,logger, date):
             out_nn = model_new.predict(np.array([[0,1]]))
             loger.debug("in make_img")
             # loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
-            print("out_nn", str(out_nn))
-            loger.debug(f'vse odinak {np.all(out_nn == out_nn[0])}')
-            # p_vec_tested = calc_out_nn(out_nn.tolist()[0])
-            # p_2d_img: np.ndarray = make_2d_arr(p_vec_tested)
-            # new_img = Image.fromarray(np.uint8(p_2d_img))
-            # new_img.save("img_net.png")
+            print("out_nn", out_nn.tolist())
+            l_test_after_contr_=l_test_after_contr(out_nn.tolist()[0],10000)
+            print("l test af contr",l_test_after_contr_)
+            # print(all([0.00010001]*10000==out_nn.tolist()))
+            vec_tested = calc_out_nn(l_test_after_contr_)
+            print("vec tested",vec_tested)
+            print(X_matr_img[0].tolist()==vec_tested)
+            # _2d_img: np.ndarray = make_2d_arr(vec_tested)
+            vec_tested_np=np.array(vec_tested)
+            img_prep=vec_tested_np.reshape(100,100)
+            img_prep=img_prep.astype('uint8')
+            new_img = Image.fromarray(img_prep,'L')
+            new_img.save("img_net.png")
+            print("Img written")
         else:
             print("Unknown bytecode -> %d"%op)
             return
@@ -363,8 +383,8 @@ if __name__ == '__main__':
     p7=(push_str,'X_comp',push_str,'Y_comp',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p8=(load_model_wei,get_weis,on_contrary,stop)
     p9=(push_str,'b:/src1',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
-    p10=(load_model_wei,get_weis,make_img_one_decomp,stop)
-    console('>>>', p10, loger, date)
+    p10=(push_str,'b:/src1',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
+    console('>>>', p4, loger, date)
 
 
 

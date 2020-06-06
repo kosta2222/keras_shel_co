@@ -45,8 +45,8 @@ def l_test_after_contr(l_:list,n):
 def calc_out_nn(l_: list):
     l_tested = [0] * 10000
     for i in range(len(l_)):
-        val = round(l_[i], 1)
-        if val > 0.5:
+        # val = round(l_[i], 1)
+        if l_[i] ==1:
             l_tested[i] = 255
         else:
             l_tested[i] = 0
