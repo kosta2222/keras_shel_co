@@ -52,6 +52,15 @@ def calc_out_nn(l_: list):
             l_tested[i] = 0
     return l_tested
 
+def calc_out_nn_n(l_: list):
+    l_tested = [0] * 10000
+    for i in range(len(l_)):
+        # val = round(l_[i], 1)
+        # if l_[i] ==1:
+            l_tested[i] = l_[i] * 255
+        # else:
+        #     l_tested[i] = 0
+    return l_tested
 
 def make_2d_arr(_1d_arr: list):
     matr_make = np.zeros(shape=(100, 100))

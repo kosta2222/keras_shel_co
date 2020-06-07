@@ -3,9 +3,10 @@ from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
 import numpy as np
-from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr
+from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr, calc_out_nn_n
 from keras.callbacks import LearningRateScheduler
 from PIL import Image
+import json
 
 # from  keras.optimizers import
 """
@@ -72,7 +73,8 @@ on_contrary=12
 make_X_matr_img_=13
 make_img_=14
 make_img_one_decomp=15
-stop = 16  # stop добавляется в скрипте если we_run
+get_weis_to_json=16
+stop = 17  # stop добавляется в скрипте если we_run
 ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img","make_img_one_decomp")
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
@@ -137,7 +139,7 @@ d0_w=None
 d1_w=None
 d2_w=None
 X_matr_img=None
-Y_matr_img=np.array([[0,1],[0,1],[0,1],[0,1]])
+Y_matr_img=np.array([[0,1],[0,1]])
 Y_matr_img_one=np.array([[0,1]])
 or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
 or_Y = [[1], [1], [1], [0]]
@@ -238,7 +240,6 @@ def vm(buffer,logger, date):
             print("Weights saved")
             logger.info('Weights saved')
         elif op==load_model_wei:
-            try:
                # loaded_json_model=''
                # with open('model_json.json','r') as f:
                #    loaded_json_model=f.read()
@@ -247,30 +248,26 @@ def vm(buffer,logger, date):
                model_obj.load_weights('wei.h5')
                print("Loaded model and weights")
                logger.info("Loaded model and weights")
-            except Exception as e:
-                print("Exc in load_model_wei")
-                print(e.args)
-                ip+=1
-                op=buffer[ip]
-                continue
         elif op==get_weis:
-            # l=[]
-            # d0=d0.get_weights()
-            # d1=d1.get_weights()
-            # d2=d2.get_weights()
             for i in range(len(model_obj.layers)):
                l_weis.append(model_obj.layers[i].get_weights())
             # d0_w,d1_w,d2_w=l
             # loger.debug(f'd0 {d0_w}\n')
             # loger.debug(f'd1 {d1_w}\n')
             # loger.debug(f'd2 {d2_w}\n')
+        elif op==get_weis_to_json:
+            wei_t=None
+            for i in range(len(model_obj.layers)):
+                l_weis.append(model_obj.layers[i].get_weights())
+                wei_t=model_obj.layers[i].get_weights()
+                ke_t,bi_t=wei_t
+                tenz=[ke_t.tolist(),bi_t.tolist()]
+                wei_dic={i:tenz}
+                with open('weis_json.json','w') as f:
+                    json.dump(wei_dic,f)
+                    print("Json weights written")
+                    logger.info("Json weights written")
         elif op==on_contrary:
-            # from keras.constraints import max_norm
-            # m=Sequential()
-            # t=Dense(3, input_dim=1,use_bias=True, activation='relu')
-            # m.add(t)
-            # print("t wei",t.get_weights())
-            #
             d0_w,d1_w,d2_w=l_weis
             # d2_w=l_weis[0]
             model_new = Sequential()
@@ -278,10 +275,7 @@ def vm(buffer,logger, date):
             l0.build((None,2))
             ke2, bi2=d2_w
             bi2_n=np.zeros(3)+bi2[0]
-            print("bi2",bi2)
             l0.set_weights([ke2.T,bi2_n])
-            # l0.set_weights([d2])
-            # print("ke2 ri",ke2)
             model_new.add(l0)
             l1 = Dense(3, activation=act_funcs[1], use_bias=True)
             l1.build((None,3))
@@ -339,6 +333,7 @@ def vm(buffer,logger, date):
             new_img = Image.fromarray(img_prep,'L')
             new_img.save("img_net_creative.png")
             print("Img written")
+            logger.info("Img written")
             loger.debug("in make_img")
         elif op == make_img_one_decomp:
             dw0, ke0= l_weis[0]
@@ -351,13 +346,13 @@ def vm(buffer,logger, date):
             out_nn = model_new.predict(np.array([[0,1]]))
             loger.debug("in make_img")
             # loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
-            print("out_nn", out_nn.tolist())
+            print("out_nn", out_nn.tolist()[0])
             l_test_after_contr_=l_test_after_contr(out_nn.tolist()[0],10000)
-            print("l test af contr",l_test_after_contr_)
+            # print("l test af contr",l_test_after_contr_)
             # print(all([0.00010001]*10000==out_nn.tolist()))
             vec_tested = calc_out_nn(l_test_after_contr_)
             print("vec tested",vec_tested)
-            print(X_matr_img[0].tolist()==vec_tested)
+            # print(X_matr_img[0].tolist()==vec_tested)
             # _2d_img: np.ndarray = make_2d_arr(vec_tested)
             vec_tested_np=np.array(vec_tested)
             img_prep=vec_tested_np.reshape(100,100)
@@ -375,15 +370,15 @@ if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__,'a')
     p1=(cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p2=(load_model_wei,get_weis,on_contrary,stop)
-    p3=(cr_nn_,push_str,'b:/src',push_i,4,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
+    p3=(cr_nn_,push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,2,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
         fit_,predict,evalu_,sav_model_wei,stop)
     p4=(load_model_wei,get_weis,make_img_,stop)
     p5=(push_str,'b:/src1',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p6=(load_model_wei,get_weis,make_img_one_decomp,stop)
     p7=(push_str,'X_comp',push_str,'Y_comp',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p8=(load_model_wei,get_weis,on_contrary,stop)
-    p9=(push_str,'b:/src1',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
-    p10=(push_str,'b:/src1',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
+    p9=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
+    p10=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
     console('>>>', p4, loger, date)
 
 
