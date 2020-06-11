@@ -3,6 +3,7 @@ from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
 import numpy as np
+from numpy.fft import rfft, irfft, ifft,fft
 from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr, calc_out_nn_n
 from keras.callbacks import LearningRateScheduler
 from PIL import Image
@@ -15,7 +16,7 @@ import json
 act_funcs=('softmax','relu','softmax')
 # init_lays=(10000, 10, 8, 2)
 # init_lays=(10, 3, 3, 2)
-init_lays=(10000,2)
+init_lays=(5,2)
 # init_lays=(3,2)
 us_bias=(False, True)
 len_nn_lays=len(init_lays) - 1
@@ -74,7 +75,8 @@ make_X_matr_img_=13
 make_img_=14
 make_img_one_decomp=15
 get_weis_to_json=16
-stop = 17  # stop добавляется в скрипте если we_run
+load_json_wei_pr_fft=17
+stop = 18  # stop добавляется в скрипте если we_run
 ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img","make_img_one_decomp")
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
@@ -143,7 +145,7 @@ Y_matr_img=np.array([[0,1],[0,1]])
 Y_matr_img_one=np.array([[0,1]])
 or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
 or_Y = [[1], [1], [1], [0]]
-X_comp=np.array([[0,1,0,1,1,1,0,1,0,0]])
+X_comp=np.array([[0,1,0,1,1]])
 Y_comp=np.array([[0,1]])
 X = np.array(or_X)
 Y = np.array(or_Y)
@@ -232,11 +234,22 @@ def vm(buffer,logger, date):
                 f.truncate()
             print("Log file cleared")
         elif op==sav_model_wei:
+            wei_t=None
             with open("model_json.json", 'w') as f:
                 f.write(model_obj.to_json())
             print("Model saved")
             logger.info('Model saved')
             model_obj.save_weights("wei.h5")
+            for i in range(len(model_obj.layers)):
+                l_weis.append(model_obj.layers[i].get_weights())
+                wei_t=model_obj.layers[i].get_weights()
+                ke_t,bi_t=wei_t
+                tenz=[ke_t.tolist(),bi_t.tolist()]
+                wei_dic={i:tenz}
+                with open('weis_json.json', 'w') as f:
+                   json.dump(wei_dic, f)
+                   print("Json weights written")
+                   logger.info("Json weights written")
             print("Weights saved")
             logger.info('Weights saved')
         elif op==load_model_wei:
@@ -268,26 +281,26 @@ def vm(buffer,logger, date):
                     print("Json weights written")
                     logger.info("Json weights written")
         elif op==on_contrary:
-            d0_w,d1_w,d2_w=l_weis
-            # d2_w=l_weis[0]
+            # d0_w,d1_w,d2_w=l_weis
+            d2_w=l_weis[0]
             model_new = Sequential()
-            l0 = Dense(3, activation=act_funcs[2], use_bias=True)
+            l0 = Dense(5, activation=act_funcs[2], use_bias=True)
             l0.build((None,2))
             ke2, bi2=d2_w
             bi2_n=np.zeros(3)+bi2[0]
             l0.set_weights([ke2.T,bi2_n])
             model_new.add(l0)
-            l1 = Dense(3, activation=act_funcs[1], use_bias=True)
-            l1.build((None,3))
-            ke1,bi1=d1_w
-            l1.set_weights([ke1.T,bi1])
-            model_new.add(l1)
-            l2 = Dense(10, activation=act_funcs[0], use_bias=True)
-            l2.build((None,3))
-            ke0,be0=d0_w
-            be0_n=np.zeros(10)+be0[0]
-            l2.set_weights([ke0.T,be0_n])
-            model_new.add(l2)
+            # l1 = Dense(3, activation=act_funcs[1], use_bias=True)
+            # l1.build((None,3))
+            # ke1,bi1=d1_w
+            # l1.set_weights([ke1.T,bi1])
+            # model_new.add(l1)
+            # l2 = Dense(10, activation=act_funcs[0], use_bias=True)
+            # l2.build((None,3))
+            # ke0,be0=d0_w
+            # be0_n=np.zeros(10)+be0[0]
+            # l2.set_weights([ke0.T,be0_n])
+            # model_new.add(l2)
             out_nn=model_new.predict(np.array([[0,1]]))
             loger.info(f'predict cont {out_nn}')
             tes_out_nn=l_test_after_contr(out_nn.tolist()[0],10)
@@ -360,6 +373,18 @@ def vm(buffer,logger, date):
             new_img = Image.fromarray(img_prep,'L')
             new_img.save("img_net.png")
             print("Img written")
+        elif op==load_json_wei_pr_fft:
+            json_data:dict=None
+            with open("weis_json.json","r") as f:
+                # for i in json.load(f):
+                    json_data=json.load(f)
+                    print(type(json_data))
+            matrix=json_data.get('0')[0]
+            print("matrix",repr(matrix))
+            four_tow_data=rfft(matrix,axis=1)
+            print("four_tow_data",four_tow_data)
+            four_i_data=irfft(four_tow_data,axis=1)
+            print("i four tow",four_i_data)
         else:
             print("Unknown bytecode -> %d"%op)
             return
@@ -379,7 +404,8 @@ if __name__ == '__main__':
     p8=(load_model_wei,get_weis,on_contrary,stop)
     p9=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p10=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
-    console('>>>', p4, loger, date)
+    p11=(load_json_wei_pr_fft,stop)
+    console('>>>', p11, loger, date)
 
 
 
