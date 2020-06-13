@@ -5,6 +5,78 @@ import os
 from PIL import Image
 import datetime as d
 from functools import wraps
+#--------------Static check---------------------
+class TypeErr(Exception):
+    def __init__(self,msg):
+        self.txt=msg
+def check_types(anots:dict,locals_or_globals:dict):
+    import sys
+    for k,v in anots.items():
+        # print("k=",k,"v=",v)
+        try:
+            val_l=locals_or_globals.get(k)
+            if k=='return':
+                val_l=locals_or_globals.get('ret_v')
+            assert type(val_l)==v
+        except AssertionError:
+            err=k + " must be type " + str(v)
+            # print(k + " must be type " + str(v))
+            raise TypeErr(err)
+
+[stop,push_dict,push_obj,check_args,check_globs,check_locs]=range(6)
+def vm_ty_check(bc:list)->None:
+    ip=0
+    sp=-1
+    steck=[0]*25
+    # steck=[]
+    op=0
+    op=bc[ip]
+    while op!=stop:
+        if op==push_dict:
+            sp+=1
+            ip+=1
+            steck[sp]=bc[ip]
+        elif op==push_obj:
+            sp+=1
+            ip+=1
+            steck[sp]=bc[ip]
+            # steck.append(bc[ip])
+        elif op==check_args:
+            locs=steck[sp]
+            sp-=1
+            annots=steck[sp].__annotations__
+            print("annots",annots)
+            sp-=1
+            check_types(annots,locs)
+        elif op==check_globs:
+            annots=steck[sp]
+            sp-=1
+            check_types(annots,globals())
+        elif op == check_locs:
+            dict_ = steck[sp]
+            sp -= 1
+            locs = steck[sp]
+            print("dict_",dict_)
+            sp -= 1
+            check_types(dict_, locs)
+        ip+=1
+        op=bc[ip]
+        # print("steck",steck)
+"""
+Example:
+def my_func(a:int, b:float,c_:str)->str:
+    c:int=a+b
+    s=c_ + str(c)
+    ret_v=s
+    vm_ty_check([push_obj,my_func,push_dict,locals(),check_args,push_dict,locals(),push_dict,{'c':int},check_locs,stop])
+    return ret_v
+# Global context
+x:float=7
+vm_ty_check([push_dict,{'x':int},check_globs,stop])               
+"""
+#--------------/Static check---------------------
+
+
 def get_logger(level_,fname,module,mode='w'):
     today=d.datetime.today()
     today_s=today.strftime('%x %X')
@@ -94,7 +166,7 @@ def print_obj(name_obj_s,dict_obj:dict,si=50)->str:
     si=si
     res=''
     for k,v in dict_obj.items():
-        if (not isinstance(v,int)) and (not isinstance(v, float)) and (not isinstance(v, bool)) and v!=None:
+        if (not isinstance(v,int)) and (not isinstance(v, float)) and (not isinstance(v, bool)) and v (not None) :
             assert('v_maybe_matrix','v_maybe_matrix')
             if len(v)>si or (isinstance(v[0], list) and len(v[0])>si):
                res+=k+' = '+ '<size of {0} [or list[0] ] is greater {1}>\n'.format(type(v), si)

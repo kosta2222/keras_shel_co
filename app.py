@@ -58,6 +58,7 @@ def evalu(X, Y):
     los_func_metr_and_scores=model_obj.evaluate(X, Y)
     return los_func_metr_and_scores
 len_=10
+stop=-1
 push_i = 0
 push_fl = 1
 push_str = 2
@@ -76,7 +77,7 @@ make_img_=14
 make_img_one_decomp=15
 get_weis_to_json=16
 load_json_wei_pr_fft=17
-stop = 18  # stop добавляется в скрипте если we_run
+make_net=19
 ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img","make_img_one_decomp")
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
@@ -385,6 +386,34 @@ def vm(buffer,logger, date):
             print("four_tow_data",four_tow_data)
             four_i_data=irfft(four_tow_data,axis=1)
             print("i four tow",four_i_data)
+        elif op==make_net:
+            if op == make_net:  # Ex:  make_net ('S', ('D','D','D'), (3, 2, 4), ('relu','sigmoid', 'softmax'), ('use_bias_1', 'use_bias_1', 'use_bias_1')))
+                l_tmp = None
+                use_bias_ = False
+                ip += 1
+                arg = buffer[ip]
+                type_m, denses, inps, acts, use_bi, kern_init = arg
+                if type_m == 'S':
+                    print("op")
+                    model_obj = Sequential()
+                for i in range(len(denses)):
+                    if denses[i] == 'D':
+                        splt_bi = use_bi[i].split('_')
+                        print("splt_bi", splt_bi)
+                        if splt_bi[-1] == '1':
+                            use_bias_ = True
+                        elif splt_bi[-1] == '0':
+                            use_bias_ = False
+                        if i == 0:
+                            l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts[i], use_bias=use_bias_,
+                                          kernel_initializer=kern_init)
+                            l_tmp.build((None,inps[0]))
+                        else:
+                            l_tmp = Dense(inps[i + 1], activation=acts[i], use_bias=use_bias_,
+                                          kernel_initializer=kern_init)
+                            l_tmp.build((None,inps[i]))
+                    model_obj.add(l_tmp)
+
         else:
             print("Unknown bytecode -> %d"%op)
             return
