@@ -81,6 +81,7 @@ load_json_wei_pr_fft=17
 make_net=19
 k_plot_model=20
 k_summary=21
+compile_net=22
 ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img","make_img_one_decomp")
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
@@ -420,6 +421,12 @@ def vm(buffer,logger, date):
             plot_model(model_obj, to_file='model.png', show_shapes=True)
         elif op==k_summary:
             model_obj.summary()
+        elif op==compile_net:
+            ip+=1
+            arg=buffer[ip]
+            opt, loss_obj, metrics=arg
+            model_obj.compile(optimizer=opt, loss=loss_obj, metrics=metrics)
+
 
         else:
             print("Unknown bytecode -> %d"%op)
