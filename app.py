@@ -2,6 +2,7 @@ from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
+from keras.utils import plot_model
 import numpy as np
 from numpy.fft import rfft, irfft, ifft,fft
 from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr, calc_out_nn_n
@@ -78,6 +79,8 @@ make_img_one_decomp=15
 get_weis_to_json=16
 load_json_wei_pr_fft=17
 make_net=19
+k_plot_model=20
+k_summary=21
 ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img","make_img_one_decomp")
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
@@ -413,6 +416,10 @@ def vm(buffer,logger, date):
                                           kernel_initializer=kern_init)
                             l_tmp.build((None,inps[i]))
                     model_obj.add(l_tmp)
+        elif op==k_plot_model:
+            plot_model(model_obj, to_file='model.png', show_shapes=True)
+        elif op==k_summary:
+            model_obj.summary()
 
         else:
             print("Unknown bytecode -> %d"%op)
@@ -434,7 +441,8 @@ if __name__ == '__main__':
     p9=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p10=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
     p11=(load_json_wei_pr_fft,stop)
-    console('>>>', p11, loger, date)
+    p12=(make_net,('S', ('D','D','D'), (3,2,3,4), ('relu','sigmoid', 'softmax'), ('use_bias_1', 'use_bias_1', 'use_bias_1'), ke_init[1]),k_summary,stop)
+    console('>>>', p12, loger, date)
 
 
 
