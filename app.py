@@ -1,3 +1,4 @@
+import keras
 from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
@@ -20,14 +21,6 @@ act_funcs=('softmax','relu','softmax')
 init_lays=(5,2)
 # init_lays=(3,2)
 us_bias=(False, True)
-len_nn_lays=len(init_lays) - 1
-opt=SGD(lr=0.01)
-compile_pars=(opt, 'categorical_crossentropy', ['accuracy'] )
-monitor_pars=('val_accuracy')
-fit_pars=(120, 1)
-def adap_lr(epoch):
-    return 0.001*epoch
-my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
 def my_init(shape,dtype=None):
     return np.zeros(shape,dtype=dtype)+0.5674321
 ke_init=("glorot_uniform",my_init)
@@ -82,6 +75,7 @@ make_net=19
 k_plot_model=20
 k_summary=21
 compile_net=22
+fit_net=23
 ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img","make_img_one_decomp")
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
@@ -141,7 +135,7 @@ def console(prompt, progr=[],loger=None, date=None):
             
             
 len_=256
-model_obj=None
+model_obj:keras.Model=None
 d0_w=None
 d1_w=None
 d2_w=None
@@ -426,6 +420,8 @@ def vm(buffer,logger, date):
             arg=buffer[ip]
             opt, loss_obj, metrics=arg
             model_obj.compile(optimizer=opt, loss=loss_obj, metrics=metrics)
+        elif op==fit_net:
+            pass
 
 
         else:
@@ -434,7 +430,22 @@ def vm(buffer,logger, date):
         ip+=1
         op=buffer[ip]
 
+
+opt = SGD(lr=0.01)
+compile_pars = (opt, 'categorical_crossentropy', ['accuracy'])
+monitor_pars=('val_accuracy')
+fit_pars=(120, 1)
+def adap_lr(epoch):
+    return 0.001*epoch
+my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
+def my_init(shape,dtype=None):
+    return np.zeros(shape,dtype=dtype)+0.5674321
+
+
 if __name__ == '__main__':
+    opt = SGD(lr=0.01)
+    compile_pars = (opt, 'categorical_crossentropy', ['accuracy'])
+
     loger, date=get_logger("debug","log.txt",__name__,'a')
     p1=(cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p2=(load_model_wei,get_weis,on_contrary,stop)
@@ -448,7 +459,8 @@ if __name__ == '__main__':
     p9=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p10=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
     p11=(load_json_wei_pr_fft,stop)
-    p12=(make_net,('S', ('D','D','D'), (3,2,3,4), ('relu','sigmoid', 'softmax'), ('use_bias_1', 'use_bias_1', 'use_bias_1'), ke_init[1]),k_summary,stop)
+    p12=(make_net,('S', ('D','D','D'), (3,2,3,4), ('relu','sigmoid', 'softmax'), ('use_bias_1', 'use_bias_1', 'use_bias_1'), ke_init[1]),k_summary,
+         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),stop)
     console('>>>', p12, loger, date)
 
 
