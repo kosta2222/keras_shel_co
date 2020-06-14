@@ -421,7 +421,9 @@ def vm(buffer,logger, date):
             opt, loss_obj, metrics=arg
             model_obj.compile(optimizer=opt, loss=loss_obj, metrics=metrics)
         elif op==fit_net:
-            pass
+            ip+=1
+            ep,ba_size,val_spl,callbacks=buffer[ip]
+            model_obj.fit(X_t, Y_t, epochs=ep, batch_size=ba_size, validation_split=val_spl, callbacks=callbacks)
 
 
         else:
@@ -434,10 +436,10 @@ def vm(buffer,logger, date):
 opt = SGD(lr=0.01)
 compile_pars = (opt, 'categorical_crossentropy', ['accuracy'])
 monitor_pars=('val_accuracy')
-fit_pars=(120, 1)
 def adap_lr(epoch):
     return 0.001*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
+fit_pars=(120, None, 1, [my_lr_scheduler])
 def my_init(shape,dtype=None):
     return np.zeros(shape,dtype=dtype)+0.5674321
 
@@ -459,8 +461,10 @@ if __name__ == '__main__':
     p9=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p10=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
     p11=(load_json_wei_pr_fft,stop)
-    p12=(make_net,('S', ('D','D','D'), (3,2,3,4), ('relu','sigmoid', 'softmax'), ('use_bias_1', 'use_bias_1', 'use_bias_1'), ke_init[1]),k_summary,
-         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),stop)
+
+    p12=(make_net,('S', ('D','D','D'), (4,2,3,2), ('relu','sigmoid', 'softmax'), ('use_bias_1', 'use_bias_1', 'use_bias_1'), ke_init[1]),k_summary,
+         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),push_str,'X_comp',push_str,'Y_comp',determe_X_Y,
+         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),stop)
     console('>>>', p12, loger, date)
 
 
