@@ -419,7 +419,9 @@ def vm(buffer,logger, date):
         elif op==fit_net:
             ip+=1
             ep,ba_size,val_spl,callbacks=buffer[ip]
-            model_obj.fit(X_t, Y_t, epochs=ep, batch_size=ba_size, validation_split=val_spl, callbacks=callbacks)
+            model_obj.fit(X_t, Y_t, epochs=ep,
+                          batch_size=ba_size,
+            validation_split=val_spl, callbacks=callbacks)
 
 
         else:
@@ -435,7 +437,7 @@ monitor_pars=('val_accuracy')
 def adap_lr(epoch):
     return 0.001*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
-fit_pars=(20, None, 1, [my_lr_scheduler])
+fit_pars=(20, 2, 1, [my_lr_scheduler])
 def my_init(shape,dtype=None):
     return np.zeros(shape,dtype=dtype)+0.5674321
 ke_init=("glorot_uniform",my_init)
@@ -461,7 +463,7 @@ if __name__ == '__main__':
 
     p12=(make_net,('S', ('D'), (10000,2), ('softmax'), ('use_bias_1'), ke_init[1]),k_summary,
          compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),push_str,'b:/src',push_i,4,push_i,10000,make_X_matr_img_,
-         push_str,'X_comp',push_str,'Y_comp',determe_X_Y,
+         push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
          fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,sav_model_wei,stop)
     console('>>>', p12, loger, date)
 
