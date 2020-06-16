@@ -202,7 +202,7 @@ def vm(buffer,logger, date):
             X_matr_img.astype('float32')
             X_matr_img/= 255.0
             print("X matr img",X_matr_img.tolist())
-            logger.debug(f'in make X matr img ravni li: {np.all(X_matr_img==X_matr_img[0])}')
+            logger.debug(f'shape X matr img: {X_matr_img.shape}')
             # X_matr_img-=np.mean(X_matr_img,axis=0,dtype='float64')
             # X_matr_img /= 255
             # X_matr_img=np.std(X_matr_img_n,axis=0,dtype='float64')
@@ -230,16 +230,16 @@ def vm(buffer,logger, date):
             print("Model saved")
             logger.info('Model saved')
             model_obj.save_weights("wei.h5")
-            for i in range(len(model_obj.layers)):
-                l_weis.append(model_obj.layers[i].get_weights())
-                wei_t=model_obj.layers[i].get_weights()
-                ke_t,bi_t=wei_t
-                tenz=[ke_t.tolist(),bi_t.tolist()]
-                wei_dic={i:tenz}
-                with open('weis_json.json', 'w') as f:
-                   json.dump(wei_dic, f)
-                   print("Json weights written")
-                   logger.info("Json weights written")
+            # for i in range(len(model_obj.layers)):
+            #     l_weis.append(model_obj.layers[i].get_weights())
+            #     wei_t=model_obj.layers[i].get_weights()
+            #     ke_t,bi_t=wei_t
+            #     tenz=[ke_t.tolist(),bi_t.tolist()]
+            #     wei_dic={i:tenz}
+            #     with open('weis_json.json', 'w') as f:
+            #        json.dump(wei_dic, f)
+            #        print("Json weights written")
+            #        logger.info("Json weights written")
             print("Weights saved")
             logger.info('Weights saved')
         elif op==load_model_wei:
@@ -418,7 +418,8 @@ def vm(buffer,logger, date):
             model_obj.compile(optimizer=opt, loss=loss_obj, metrics=metrics)
         elif op==fit_net:
             ip+=1
-            ep,ba_size,val_spl,callbacks=buffer[ip]
+            arg=buffer[ip]
+            ep,ba_size,val_spl,callbacks=arg
             model_obj.fit(X_t, Y_t, epochs=ep,
                           batch_size=ba_size,
             validation_split=val_spl, callbacks=callbacks)
@@ -435,9 +436,9 @@ opt = SGD(lr=0.01)
 compile_pars = (opt, 'categorical_crossentropy', ['accuracy'])
 monitor_pars=('val_accuracy')
 def adap_lr(epoch):
-    return 0.001*epoch
+    return 0.07*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
-fit_pars=(20, 2, 1, [my_lr_scheduler])
+fit_pars=(120, None, 1, [my_lr_scheduler])
 def my_init(shape,dtype=None):
     return np.zeros(shape,dtype=dtype)+0.5674321
 ke_init=("glorot_uniform",my_init)
@@ -461,7 +462,7 @@ if __name__ == '__main__':
     p10=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
     p11=(load_json_wei_pr_fft,stop)
 
-    p12=(make_net,('S', ('D'), (10000,2), ('softmax'), ('use_bias_1'), ke_init[1]),k_summary,
+    p12=(make_net,('S', ('D'), (10000,2), ('S'), ('use_bias_1'), ke_init[1]),k_summary,
          compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),push_str,'b:/src',push_i,4,push_i,10000,make_X_matr_img_,
          push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
          fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,sav_model_wei,stop)
