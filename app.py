@@ -15,15 +15,6 @@ import json
 """
 Замечания: для Python3 с f строками(используются в логинге)
 """
-act_funcs=('softmax','relu','softmax')
-# init_lays=(10000, 10, 8, 2)
-# init_lays=(10, 3, 3, 2)
-init_lays=(5,2)
-# init_lays=(3,2)
-us_bias=(False, True)
-def my_init(shape,dtype=None):
-    return np.zeros(shape,dtype=dtype)+0.5674321
-ke_init=("glorot_uniform",my_init)
 def create_nn(is_my_init):
     k_i=None
     if is_my_init:
@@ -140,7 +131,7 @@ d0_w=None
 d1_w=None
 d2_w=None
 X_matr_img=None
-Y_matr_img=np.array([[0,1],[0,1]])
+Y_matr_img=np.array([[0,1],[0,1],[0,1],[0,1]])
 Y_matr_img_one=np.array([[0,1]])
 or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
 or_Y = [[1], [1], [1], [0]]
@@ -387,12 +378,17 @@ def vm(buffer,logger, date):
         elif op==make_net:
             if op == make_net:  # Ex:  make_net ('S', ('D','D','D'), (3, 2, 4), ('relu','sigmoid', 'softmax'), ('use_bias_1', 'use_bias_1', 'use_bias_1')))
                 l_tmp = None
+                acts_di:dict=None
+                acts_di={'s':'sigmoid','r':'relu','t':'tanh','S':'softmax'}
                 use_bias_ = False
                 ip += 1
                 arg = buffer[ip]
                 type_m, denses, inps, acts, use_bi, kern_init = arg
-                if type_m == 'S':
+                if len(acts)==1:
                     print("op")
+                    acts=acts[0]
+                if type_m == 'S':
+                    # print("op")
                     model_obj = Sequential()
                 for i in range(len(denses)):
                     if denses[i] == 'D':
@@ -403,11 +399,11 @@ def vm(buffer,logger, date):
                         elif splt_bi[-1] == '0':
                             use_bias_ = False
                         if i == 0:
-                            l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts[i], use_bias=use_bias_,
+                            l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts_di.get(acts[i]), use_bias=use_bias_,
                                           kernel_initializer=kern_init)
                             l_tmp.build((None,inps[0]))
                         else:
-                            l_tmp = Dense(inps[i + 1], activation=acts[i], use_bias=use_bias_,
+                            l_tmp = Dense(inps[i + 1], activation=acts_di.get(acts[i]), use_bias=use_bias_,
                                           kernel_initializer=kern_init)
                             l_tmp.build((None,inps[i]))
                     model_obj.add(l_tmp)
@@ -439,9 +435,10 @@ monitor_pars=('val_accuracy')
 def adap_lr(epoch):
     return 0.001*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
-fit_pars=(120, None, 1, [my_lr_scheduler])
+fit_pars=(20, None, 1, [my_lr_scheduler])
 def my_init(shape,dtype=None):
     return np.zeros(shape,dtype=dtype)+0.5674321
+ke_init=("glorot_uniform",my_init)
 
 
 if __name__ == '__main__':
@@ -462,9 +459,10 @@ if __name__ == '__main__':
     p10=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
     p11=(load_json_wei_pr_fft,stop)
 
-    p12=(make_net,('S', ('D','D','D'), (4,2,3,2), ('relu','sigmoid', 'softmax'), ('use_bias_1', 'use_bias_1', 'use_bias_1'), ke_init[1]),k_summary,
-         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),push_str,'X_comp',push_str,'Y_comp',determe_X_Y,
-         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),stop)
+    p12=(make_net,('S', ('D'), (10000,2), ('softmax'), ('use_bias_1'), ke_init[1]),k_summary,
+         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),push_str,'b:/src',push_i,4,push_i,10000,make_X_matr_img_,
+         push_str,'X_comp',push_str,'Y_comp',determe_X_Y,
+         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,sav_model_wei,stop)
     console('>>>', p12, loger, date)
 
 
