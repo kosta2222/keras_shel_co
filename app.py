@@ -4,6 +4,8 @@ from keras.callbacks import EarlyStopping
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
 from keras.utils import plot_model
+from keras import initializers
+import keras.backend as K
 import numpy as np
 from numpy.fft import rfft, irfft, ifft,fft
 from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr, calc_out_nn_n
@@ -67,6 +69,8 @@ k_plot_model=20
 k_summary=21
 compile_net=22
 fit_net=23
+make_net_load_wei=24
+make_on_contr_net=25
 ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img","make_img_one_decomp")
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
@@ -126,7 +130,7 @@ def console(prompt, progr=[],loger=None, date=None):
             
             
 len_=256
-model_obj:keras.Model=None
+model_obj:keras.models.Model=None
 d0_w=None
 d1_w=None
 d2_w=None
@@ -225,11 +229,16 @@ def vm(buffer,logger, date):
             print("Log file cleared")
         elif op==sav_model_wei:
             wei_t=None
-            with open("model_json.json", 'w') as f:
-                f.write(model_obj.to_json())
+            # with open("model_json.json", 'w') as f:
+            #     f.write(model_obj.to_json())
             print("Model saved")
             logger.info('Model saved')
-            model_obj.save_weights("wei.h5")
+            model_obj.save_weights("wei.h5", overwrite=True)
+            # l=None
+            for d in model_obj.layers:
+            #     l=d
+               logger.debug(f"d  {d}")
+            logger.debug(f"model obj conf leg {model_obj.legacy_get_config()}")
             # for i in range(len(model_obj.layers)):
             #     l_weis.append(model_obj.layers[i].get_weights())
             #     wei_t=model_obj.layers[i].get_weights()
@@ -384,11 +393,7 @@ def vm(buffer,logger, date):
                 ip += 1
                 arg = buffer[ip]
                 type_m, denses, inps, acts, use_bi, kern_init = arg
-                if len(acts)==1:
-                    print("op")
-                    acts=acts[0]
                 if type_m == 'S':
-                    # print("op")
                     model_obj = Sequential()
                 for i in range(len(denses)):
                     if denses[i] == 'D':
@@ -399,14 +404,92 @@ def vm(buffer,logger, date):
                         elif splt_bi[-1] == '0':
                             use_bias_ = False
                         if i == 0:
+                            initializer = initializers.get(kern_init)
                             l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts_di.get(acts[i]), use_bias=use_bias_,
-                                          kernel_initializer=kern_init)
-                            l_tmp.build((None,inps[0]))
+                                          trainable=True)
+                            # l_tmp.build((None,inps[0]))
+                            # logger.debug(f'l_tmp.add_weight {l_tmp.add_weight(shape=(inps[0],inps[i+1]),initializer=kern_init,name=str(i))}')
+                            # l_tmp.build((None,inps[0]))
+                            # l_tmp.add_weight(shape=(inps[0],inps[i+1]),initializer=kern_init,name=str(i))
+                            # l_tmp.build((None,inps[0]))
+                            logger.debug(f"ltmp {l_tmp} i={i}")
+                            logger.debug(f'l_tmp config  {l_tmp.get_config()}')
                         else:
-                            l_tmp = Dense(inps[i + 1], activation=acts_di.get(acts[i]), use_bias=use_bias_,
-                                          kernel_initializer=kern_init)
-                            l_tmp.build((None,inps[i]))
+                            l_tmp = Dense(inps[i + 1],input_dim=inps[i],activation=acts_di.get(acts[i]), use_bias=use_bias_,
+                                           trainable=True)
+                            # l_tmp.build((None,inps[i]))
+                            # l_tmp.add_weight(shape=(inps[i],inps[i+1]),initializer=kern_init,name=str(i))
+                            logger.debug(f"ltmp {l_tmp} i={i}")
+                            logger.debug(f'l_tmp config  {l_tmp.get_config()}')
+                        model_obj.add(l_tmp)
+
+        elif op==make_net_load_wei:
+            l_tmp = None
+            acts_di: dict = None
+            acts_di = {'s': 'sigmoid', 'r': 'relu', 't': 'tanh', 'S': 'softmax'}
+            use_bias_ = False
+            ip += 1
+            arg = buffer[ip]
+            type_m, denses, inps, acts, use_bi, kern_init = arg
+            if type_m == 'S':
+                model_obj = Sequential()
+            for i in range(len(denses)):
+                if denses[i] == 'D':
+                    splt_bi = use_bi[i].split('_')
+                    print("splt_bi", splt_bi)
+                    if splt_bi[-1] == '1':
+                        use_bias_ = True
+                    elif splt_bi[-1] == '0':
+                        use_bias_ = False
+                    if i == 0:
+                        l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts_di.get(acts[i]),
+                                      use_bias=use_bias_,
+                                      kernel_initializer=kern_init)
+                        l_tmp.build((None, inps[0]))
+                    else:
+                        l_tmp = Dense(inps[i + 1], activation=acts_di.get(acts[i]), use_bias=use_bias_,
+                                      kernel_initializer=kern_init)
+                        l_tmp.build((None, inps[i]))
+                model_obj.add(l_tmp)
+            model_obj.load_weights('wei.h5')
+            print("Loaded model and weights")
+            logger.info("Loaded model and weights")
+        elif op==make_on_contr_net:
+            model_obj_tm:keras.Model=None
+            model_obj_tm=model_obj
+            l_tmp = None
+            acts_di: dict = None
+            acts_di = {'s': 'sigmoid', 'r': 'relu', 't': 'tanh', 'S': 'softmax'}
+            use_bias_ = False
+            ip += 1
+            arg = buffer[ip]
+            type_m, denses, inps, acts, use_bi, kern_init = arg
+            # if len(acts) == 1:
+            #     print("op")
+            #     acts = acts[0]
+            if type_m == 'S':
+                model_obj = Sequential()
+            for i in range(len(denses)):
+                if denses[i] == 'D':
+                    splt_bi = use_bi[i].split('_')
+                    print("splt_bi", splt_bi)
+                    if splt_bi[-1] == '1':
+                        use_bias_ = True
+                    elif splt_bi[-1] == '0':
+                        use_bias_ = False
+                    if i == 0:
+                        l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts_di.get(acts[i]),
+                                      use_bias=use_bias_,
+                                      kernel_initializer=kern_init)
+                        # l_tmp.build((None, inps[0]))
+                    else:
+                        l_tmp = Dense(inps[i + 1],input_dim=inps[i], activation=acts_di.get(acts[i]), use_bias=use_bias_,
+                                      kernel_initializer=kern_init)
+                        # l_tmp.build((None, inps[i]))
+                    wei=model_obj_tm.layers[i].get_weights()
+                    l_tmp.set_weights(wei)
                     model_obj.add(l_tmp)
+
         elif op==k_plot_model:
             plot_model(model_obj, to_file='model.png', show_shapes=True)
         elif op==k_summary:
@@ -433,21 +516,18 @@ def vm(buffer,logger, date):
 
 
 opt = SGD(lr=0.01)
-compile_pars = (opt, 'categorical_crossentropy', ['accuracy'])
+compile_pars = (opt, 'mse', ['accuracy'])
 monitor_pars=('val_accuracy')
 def adap_lr(epoch):
     return 0.07*epoch
-my_lr_scheduler=LearningRateScheduler(adap_lr, 1)
-fit_pars=(120, None, 1, [my_lr_scheduler])
+my_lr_scheduler=LearningRateScheduler(adap_lr)
+fit_pars=(10, 1, 1, [my_lr_scheduler])
 def my_init(shape,dtype=None):
     return np.zeros(shape,dtype=dtype)+0.5674321
 ke_init=("glorot_uniform",my_init)
 
 
 if __name__ == '__main__':
-    opt = SGD(lr=0.01)
-    compile_pars = (opt, 'categorical_crossentropy', ['accuracy'])
-
     loger, date=get_logger("debug","log.txt",__name__,'a')
     p1=(cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
     p2=(load_model_wei,get_weis,on_contrary,stop)
@@ -466,7 +546,18 @@ if __name__ == '__main__':
          compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),push_str,'b:/src',push_i,4,push_i,10000,make_X_matr_img_,
          push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
          fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,sav_model_wei,stop)
-    console('>>>', p12, loger, date)
+    p13=(make_net_load_wei,('S', ('D'), (10000,2), ('S'), ('use_bias_1'), ke_init[0]),k_summary,
+         # compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
+         push_str,'b:/src',push_i,4,push_i,10000,make_X_matr_img_,
+         push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
+         # fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),
+         predict,sav_model_wei,stop)
+    p14=(make_net,('S', ('D','D'), (2,3,1),('r','s','s'), ('use_bias_0','use_bias_0','use_bias_0'),ke_init[1]),k_summary,
+        compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
+         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,
+         sav_model_wei,
+         stop)
+    console('>>>', p14, loger, date)
 
 
 
