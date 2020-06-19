@@ -3,21 +3,22 @@ from os import listdir
 import os
 import numpy as np
 from PIL import Image
+import PIL
 def matr_img(path_:str,pixel_amount:int)->tuple:
-
     p=listdir(path_)
     print("p",p)
-    X=None
+    X=[]
     fold_cont:list=None
     num_clss=len(p)
-    Y=None
-    img=None
+    Y=[]
+    img:PIL.Image=None
     data=None
     for fold_name_i in p:
+        # print("fold_name_i",fold_name_i)
         fold_name_ind=int(fold_name_i.split('_')[0])
         p_tmp_ful=os.path.join(path_,fold_name_i)
         fold_content=listdir(p_tmp_ful)
-        print("fold_cont",fold_cont)
+        # print("fold_cont",fold_content)
         rows=len(fold_content)
         X_t=np.zeros((rows,pixel_amount))
         Y_t=np.zeros((rows,num_clss))
@@ -28,17 +29,12 @@ def matr_img(path_:str,pixel_amount:int)->tuple:
             data=list(img.getdata())
             X_t[f_index]=data
             print("X_t[f_index]",X_t[f_index])
-            if f_index==0:
-               print("op")
-               X=np.vstack((np.zeros((1,pixel_amount)),X_t))
-               print("X",X)
-               Y=np.vstack((np.zeros((1,num_clss)),Y_t))
-            else:
-               X = np.vstack((X, X_t))
-               Y = np.vstack((Y, Y_t))
-        f_index+=1
+            f_index+=1
+        X.extend(X_t)
+        Y.extend(Y_t)
+        print("X",X)
 
-    return (X[1:], Y[1:])
+    return (X,Y)
 
 def vm(buffer, logger=None, date=None):
     len_ = 25
@@ -75,9 +71,9 @@ def vm(buffer, logger=None, date=None):
             sp-=1
             out=matr_img(path,pix_am)
             assert isinstance(out,tuple)
-            assert out[0].shape==(4,10000)
-            assert out[1].shape==(4,2)
-            print("out[0].shape",out[0].shape)
+            assert len(out[0])==9
+            print("len out[0]",len(out[0]))
+            assert len(out[1])==9
         ip+=1
         if ip>(len(buffer)-1):
             return
