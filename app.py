@@ -1,6 +1,7 @@
 import keras
 from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
+from keras import initializers
 from  keras.models import Sequential, model_from_json
 from  keras.layers import Dense
 from keras.utils import plot_model
@@ -9,20 +10,31 @@ import keras.backend as K
 import numpy as np
 from numpy.fft import rfft, irfft, ifft,fft
 from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr, calc_out_nn_n
-from keras.callbacks import LearningRateScheduler
+from keras.callbacks import LearningRateScheduler, History
 from PIL import Image
 import json
+from keras.utils import generic_utils
+import matplotlib.pyplot as plt
+import logging
+
 
 # from  keras.optimizers import
 """
 Замечания: для Python3 с f строками(используются в логинге)
 """
-def pred(X):
-  return model_obj.predict(X)
+class My_const_init(initializers.Initializer):
+    def __init__(self,my_parm):
+       self.m_p=my_parm
+    def __call__(self,shape,dtype=None):
+       return np.zeros(shape,dtype=dtype)+0.5674321
+    def get_config(self):
+       return {'my_parm':self.m_p}
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
-def evalu(X, Y):
-    los_func_metr_and_scores=model_obj.evaluate(X, Y)
-    return los_func_metr_and_scores
+generic_utils._GLOBAL_CUSTOM_OBJECTS['My_const_init']=My_const_init(7)
+
 len_=10
 stop=-1
 push_i = 0
@@ -49,8 +61,11 @@ k_summary=21
 compile_net=22
 fit_net=23
 make_net_load_wei=24
-make_on_contr_net=25
-ops=("push_i","push_fl", "push_str", "cr_nn", "fit", "predict","evalu","determe_X_Y","cl_log","sav_model_wei","load_model_wei","get_weis","on_contrary","make_X_matr_img","make_img","make_img_one_decomp")
+make_net_on_contrary=25
+plot_train=26
+ops=("")  #  No need in console input in this programm
+
+
 def console(prompt, progr=[],loger=None, date=None):
     if len(progr)==0:
         buffer = [0] * len_ * 2  # байт-код для шелл-кода
@@ -109,10 +124,6 @@ def console(prompt, progr=[],loger=None, date=None):
             
             
 len_=256
-model_obj:keras.models.Model=None
-d0_w=None
-d1_w=None
-d2_w=None
 X_matr_img=None
 Y_matr_img=np.array([[0,1],[0,1],[0,1],[0,1]])
 Y_matr_img_one=np.array([[0,1]])
@@ -126,12 +137,26 @@ X_t=None
 Y_t=None
 X_t=X  #  по умолчанию
 Y_t=Y
+
+
+def plot_history_(_file:str,history:History,name_gr:str,logger:logging.Logger):
+    fig:plt.Figure=None
+    ax:plt.Axes=None
+    fig, ax=plt.subplots()
+    plt.text(0.1, 1.1, name_gr)
+    ax.plot(history.history["loss"],label="Уменьшение значения целевой функции")
+    plt.plot(history.history['acc'],label="Доля верных ответов на обучающем наборе")
+    if 'val_acc' in history.history:
+      plt.plot(history.history['val_acc'],label='Доля верных ответов на проверочном наборе')
+    plt.xlabel('Эпоха обучения')
+    plt.ylabel('Доля верных ответов / loss')
+    ax.legend()
+    plt.savefig(_file)
 def vm(buffer,logger, date):
-    global model_obj, X_t, Y_t,d0_w,d1_w,d2_w, X_matr_img
+    global X_t, Y_t,d0_w,d1_w,d2_w, X_matr_img
+    model_obj: keras.models.Model = None
+    history:History=None
     l_weis=[]
-    # logger=get_logger(level)
-    # today=d.datetime.today()
-    # today_s=today.strftime('%x %X')
     logger.info(logger.debug(f'Log started {date}'))
     vm_is_running=True
     ip=0
@@ -155,11 +180,6 @@ def vm(buffer,logger, date):
             sp_str += 1
             ip += 1
             steck_str[sp_str] = buffer[ip]
-        elif op==cr_nn_:
-           model_obj_=create_nn(True)
-           model_obj=model_obj_
-           print("Model created ",model_obj)
-           logger.debug(f'Model created {model_obj}')
         elif op==determe_X_Y:
             var_Y = steck_str[sp_str]
             sp_str -= 1
@@ -190,16 +210,13 @@ def vm(buffer,logger, date):
             # X_matr_img /= 255
             # X_matr_img=np.std(X_matr_img_n,axis=0,dtype='float64')
             # X_matr_img /= 255
-        elif op==fit_:
-            fit_nn(X_t, Y_t)
             # loger.debug(f'd0  {d0.get_weights()}')
         elif op==predict:
-            out_nn=pred(X_t)
+            out_nn=model_obj.predict(X_t)
             print("Predict matr: ",out_nn)
             logger.info(f"Predict matr: {out_nn}")
-
         elif op==evalu_:
-            out_ev=evalu(X_t, Y_t)
+            out_ev=model_obj.evaluate(X_t, Y_t)
             print("Eval model: ",out_ev)
             logger.info(f"Eval model: {out_ev}")
         elif op==cl_log:
@@ -207,45 +224,24 @@ def vm(buffer,logger, date):
                 f.truncate()
             print("Log file cleared")
         elif op==sav_model_wei:
-            wei_t=None
-            # with open("model_json.json", 'w') as f:
-            #     f.write(model_obj.to_json())
+            with open("model_json.json", 'w') as f:
+                f.write(model_obj.to_json())
             print("Model saved")
             logger.info('Model saved')
             model_obj.save_weights("wei.h5", overwrite=True)
-            # l=None
-            for d in model_obj.layers:
-            #     l=d
-               logger.debug(f"d  {d}")
-            logger.debug(f"model obj conf leg {model_obj.legacy_get_config()}")
-            # for i in range(len(model_obj.layers)):
-            #     l_weis.append(model_obj.layers[i].get_weights())
-            #     wei_t=model_obj.layers[i].get_weights()
-            #     ke_t,bi_t=wei_t
-            #     tenz=[ke_t.tolist(),bi_t.tolist()]
-            #     wei_dic={i:tenz}
-            #     with open('weis_json.json', 'w') as f:
-            #        json.dump(wei_dic, f)
-            #        print("Json weights written")
-            #        logger.info("Json weights written")
             print("Weights saved")
             logger.info('Weights saved')
         elif op==load_model_wei:
-               # loaded_json_model=''
-               # with open('model_json.json','r') as f:
-               #    loaded_json_model=f.read()
-               # model_obj=model_from_json(loaded_json_model)
-               model_obj=create_nn(False)
+               loaded_json_model=''
+               with open('model_json.json','r') as f:
+                  loaded_json_model=f.read()
+               model_obj=model_from_json(loaded_json_model)
                model_obj.load_weights('wei.h5')
                print("Loaded model and weights")
                logger.info("Loaded model and weights")
         elif op==get_weis:
             for i in range(len(model_obj.layers)):
                l_weis.append(model_obj.layers[i].get_weights())
-            # d0_w,d1_w,d2_w=l
-            # loger.debug(f'd0 {d0_w}\n')
-            # loger.debug(f'd1 {d1_w}\n')
-            # loger.debug(f'd2 {d2_w}\n')
         elif op==get_weis_to_json:
             wei_t=None
             for i in range(len(model_obj.layers)):
@@ -258,32 +254,6 @@ def vm(buffer,logger, date):
                     json.dump(wei_dic,f)
                     print("Json weights written")
                     logger.info("Json weights written")
-        elif op==on_contrary:
-            # d0_w,d1_w,d2_w=l_weis
-            d2_w=l_weis[0]
-            model_new = Sequential()
-            l0 = Dense(5, activation=act_funcs[2], use_bias=True)
-            l0.build((None,2))
-            ke2, bi2=d2_w
-            bi2_n=np.zeros(3)+bi2[0]
-            l0.set_weights([ke2.T,bi2_n])
-            model_new.add(l0)
-            # l1 = Dense(3, activation=act_funcs[1], use_bias=True)
-            # l1.build((None,3))
-            # ke1,bi1=d1_w
-            # l1.set_weights([ke1.T,bi1])
-            # model_new.add(l1)
-            # l2 = Dense(10, activation=act_funcs[0], use_bias=True)
-            # l2.build((None,3))
-            # ke0,be0=d0_w
-            # be0_n=np.zeros(10)+be0[0]
-            # l2.set_weights([ke0.T,be0_n])
-            # model_new.add(l2)
-            out_nn=model_new.predict(np.array([[0,1]]))
-            loger.info(f'predict cont {out_nn}')
-            tes_out_nn=l_test_after_contr(out_nn.tolist()[0],10)
-            logger.debug(f'vec izn {tes_out_nn}')
-            logger.debug(f'ravini li: {X_comp==tes_out_nn}')
         elif op == make_img_:
             # d0_w,d1_w,d2_w=l_weis
             d0_w=l_weis[0]
@@ -377,22 +347,19 @@ def vm(buffer,logger, date):
                 for i in range(len(denses)):
                     if denses[i] == 'D':
                         splt_bi = use_bi[i].split('_')
-                        print("splt_bi", splt_bi)
                         if splt_bi[-1] == '1':
                             use_bias_ = True
                         elif splt_bi[-1] == '0':
                             use_bias_ = False
                         if i == 0:
-                            initializer = initializers.get(kern_init)
                             l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts_di.get(acts[i]), use_bias=use_bias_,
-                                          trainable=True)
-                         
+                                          trainable=True, kernel_initializer=kern_init)
                         else:
                             l_tmp = Dense(inps[i + 1],input_dim=inps[i],activation=acts_di.get(acts[i]), use_bias=use_bias_,
-                                           trainable=True)
+                                           trainable=True, kernel_initializer=kern_init)
                         model_obj.add(l_tmp)
 
-        elif op==make_net_load_wei:
+        elif op==make_net_on_contrary:
             l_tmp = None
             acts_di: dict = None
             acts_di = {'s': 'sigmoid', 'r': 'relu', 't': 'tanh', 'S': 'softmax'}
@@ -402,63 +369,41 @@ def vm(buffer,logger, date):
             type_m, denses, inps, acts, use_bi, kern_init = arg
             if type_m == 'S':
                 model_obj = Sequential()
-            for i in range(len(denses)):
+            for i in range(len(denses)-1,-1,-1):
                 if denses[i] == 'D':
                     splt_bi = use_bi[i].split('_')
-                    print("splt_bi", splt_bi)
                     if splt_bi[-1] == '1':
                         use_bias_ = True
                     elif splt_bi[-1] == '0':
                         use_bias_ = False
-                    if i == 0:
-                        l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts_di.get(acts[i]),
+                    if i==len(denses)-1:
+                       l_tmp = Dense(inps[i],input_dim=inps[i+1], activation=acts_di.get(acts[i]),
                                       use_bias=use_bias_,
                                       kernel_initializer=kern_init)
-                        l_tmp.build((None, inps[0]))
+                       l_tmp.build((None, inps[i+1]))
                     else:
-                        l_tmp = Dense(inps[i + 1], activation=acts_di.get(acts[i]), use_bias=use_bias_,
-                                      kernel_initializer=kern_init)
-                        l_tmp.build((None, inps[i]))
+                        l_tmp = Dense(inps[i],activation=acts_di.get(acts[i]), use_bias=use_bias_,
+                                     kernel_initializer=kern_init)
+                        l_tmp.build((None, inps[i+1]))
+                    if use_bias_:
+                        # Only if we have biases
+                        wei_t=l_weis[i]
+                        ke,bi=wei_t
+                        bi_n=np.zeros(inps[i])+bi[0]
+                        l_tmp.set_weights([ke.T, bi_n])
+                    else:
+                        raise RuntimeError("Without biases on-contrary net not implemented")
                 model_obj.add(l_tmp)
-            model_obj.load_weights('wei.h5')
-            print("Loaded model and weights")
-            logger.info("Loaded model and weights")
-        elif op==make_on_contr_net:
-            model_obj_tm:keras.Model=None
-            model_obj_tm=model_obj
-            l_tmp = None
-            acts_di: dict = None
-            acts_di = {'s': 'sigmoid', 'r': 'relu', 't': 'tanh', 'S': 'softmax'}
-            use_bias_ = False
-            ip += 1
-            arg = buffer[ip]
-            type_m, denses, inps, acts, use_bi, kern_init = arg
-            if type_m == 'S':
-                model_obj = Sequential()
-            for i in range(len(denses)):
-                if denses[i] == 'D':
-                    splt_bi = use_bi[i].split('_')
-                    if splt_bi[-1] == '1':
-                        use_bias_ = True
-                    elif splt_bi[-1] == '0':
-                        use_bias_ = False
-                    if i == 0:
-                        l_tmp = Dense(inps[i + 1], input_dim=inps[0], activation=acts_di.get(acts[i]),
-                                      use_bias=use_bias_,
-                                      kernel_initializer=kern_init)
-                        # l_tmp.build((None, inps[0]))
-                    else:
-                        l_tmp = Dense(inps[i + 1],input_dim=inps[i], activation=acts_di.get(acts[i]), use_bias=use_bias_,
-                                      kernel_initializer=kern_init)
-                        # l_tmp.build((None, inps[i]))
-                    wei=model_obj_tm.layers[i].get_weights()
-                    l_tmp.set_weights(wei)
-                    model_obj.add(l_tmp)
-
+            print("On-contrary net created")
+            logger.info("On-contrary net created")
         elif op==k_plot_model:
             plot_model(model_obj, to_file='model.png', show_shapes=True)
         elif op==k_summary:
             model_obj.summary()
+        elif op==plot_train:
+            ip+=1
+            arg=buffer[ip]
+            plot_history_('./graphic/train_graphic.png', history, arg, logger)
         elif op==compile_net:
             ip+=1
             arg=buffer[ip]
@@ -468,14 +413,11 @@ def vm(buffer,logger, date):
             ip+=1
             arg=buffer[ip]
             ep,ba_size,val_spl,callbacks=arg
-            model_obj.fit(X_t, Y_t, epochs=ep,
+            history=model_obj.fit(X_t, Y_t, epochs=ep,
                           batch_size=ba_size,
             validation_split=val_spl, callbacks=callbacks)
-
-
         else:
-            print("Unknown bytecode -> %d"%op)
-            return
+            raise RuntimeError("Unknown bytecode -> %d"%op)
         ip+=1
         op=buffer[ip]
 
@@ -487,8 +429,7 @@ def adap_lr(epoch):
     return 0.07*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr)
 fit_pars=(10, 1, 1, [my_lr_scheduler])
-def my_init(shape,dtype=None):
-    return np.zeros(shape,dtype=dtype)+0.5674321
+my_init=My_const_init(9)
 ke_init=("glorot_uniform",my_init)
 
 
@@ -517,11 +458,14 @@ if __name__ == '__main__':
          push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
          # fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),
          predict,sav_model_wei,stop)
-    p14=(make_net,('S', ('D','D'), (2,3,1),('r','s','s'), ('use_bias_0','use_bias_0','use_bias_0'),ke_init[1]),k_summary,
+    p14=(make_net,('S', ('D','D'), (2,3,1),('r','s'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),k_summary,
         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
          fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,
-         sav_model_wei,
+         sav_model_wei,plot_train,"Or",
          stop)
+    p15=(load_model_wei,predict,stop)
+    p16=(load_model_wei,get_weis,make_net_on_contrary,('S', ('D','D'), (2,3,1),('r','s'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
+         k_plot_model,stop)
     console('>>>', p14, loger, date)
 
 
