@@ -5,6 +5,9 @@ import os
 from PIL import Image
 import datetime as d
 from functools import wraps
+from PIL import Image
+import PIL
+from os import listdir
 #--------------Static check---------------------
 class TypeErr(Exception):
     def __init__(self,msg):
@@ -157,6 +160,38 @@ def make_train_img_matr(p_: str,rows,elems) -> np.ndarray:
     return matr.tolist()
 
 
+def matr_img(path_:str,pixel_amount:int)->tuple:
+    p=listdir(path_)
+    # print("p",p)
+    X=[]
+    Y=[]
+    fold_cont:list=None
+    num_clss=len(p)
+    img:PIL.Image=None
+    data=None
+    for fold_name_i in p:
+        # print("fold_name_i",fold_name_i)
+        fold_name_ind=int(fold_name_i.split('_')[0])
+        p_tmp_ful=os.path.join(path_,fold_name_i)
+        fold_content=listdir(p_tmp_ful)
+        # print("fold_cont",fold_content)
+        rows=len(fold_content)
+        X_t=np.zeros((rows,pixel_amount))
+        Y_t=np.zeros((rows,num_clss))
+        f_index=0
+        for file_name_j in fold_content:
+            Y_t[f_index][fold_name_ind]=1
+            img=Image.open(os.path.join(p_tmp_ful,file_name_j))
+            data=list(img.getdata())
+            X_t[f_index]=data
+            # print("X_t[f_index]",X_t[f_index])
+            f_index+=1
+        X_t=X_t.tolist()
+        Y_t=Y_t.tolist()
+        X.extend(X_t)
+        Y.extend(Y_t)
+        # print("X",X)
+    return (X,Y)
 def _0_(str_):
     print("Success ->", end = " ")
     print("function",str_)

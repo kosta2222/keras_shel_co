@@ -9,9 +9,8 @@ from keras import initializers
 import keras.backend as K
 import numpy as np
 from numpy.fft import rfft, irfft, ifft,fft
-from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr, calc_out_nn_n
+from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr, calc_out_nn_n, matr_img
 from keras.callbacks import LearningRateScheduler, History
-from PIL import Image
 import json
 from keras.utils import generic_utils
 import matplotlib.pyplot as plt
@@ -264,73 +263,73 @@ def vm(buffer,logger, date):
             X_t, Y_t=matr_img(path_,pix_am)
             X_t=np.array(X_t)
             Y_t=np.array(Y_t)
-        elif op == make_img_:
-            # d0_w,d1_w,d2_w=l_weis
-            d0_w=l_weis[0]
-            model_new = Sequential()
-            l0 = Dense(10000, activation=act_funcs[0], use_bias=True)
-            l0.build((None,2))
-            ke2,be2=d0_w
-            bi2_n=np.zeros(10000)+be2[0]
-            l0.set_weights([ke2.T,bi2_n])
-            # l0.set_weights([d2])
-            # print("ke2 ri",ke2)
-            model_new.add(l0)
-            # l1 = Dense(10, activation=act_funcs[1], use_bias=True)
-            # l1.build((None,8))
-            # ke1,be1=d1_w
-            # be1_n=np.zeros(10)+be1[0]
-            # l1.set_weights([ke1.T,be1_n])
-            # model_new.add(l1)
-            # l2 = Dense(10000, activation=act_funcs[0], use_bias=True)
-            # l2.build((None,10))
-            # ke0,bi0=d0_w
-            # bi0_n=np.zeros(10000)+bi0[0]
-            # l2.set_weights([ke0.T,bi0_n])
-            # model_new.add(l2)
-            out_nn = model_new.predict(np.array([[0,1]]))
-            # loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
-            # print("out_nn", out_nn.tolist())
-            l_test_after_contr_=l_test_after_contr(out_nn.tolist()[0],10000)
-            # print("l test af contr",l_test_after_contr_)
-            # print(all([0.00010001]*10000==out_nn.tolist()))
-            vec_tested = calc_out_nn(l_test_after_contr_)
-            # print("vec tested",vec_tested)
-            # print(X_matr_img[0].tolist()==vec_tested)
-            # _2d_img: np.ndarray = make_2d_arr(vec_tested)
-            vec_tested_np=np.array(vec_tested)
-            img_prep=vec_tested_np.reshape(100,100)
-            img_prep=img_prep.astype('uint8')
-            new_img = Image.fromarray(img_prep,'L')
-            new_img.save("img_net_creative.png")
-            print("Img written")
-            logger.info("Img written")
-            loger.debug("in make_img")
-        elif op == make_img_one_decomp:
-            dw0, ke0= l_weis[0]
-            model_new = Sequential()
-            l0 = Dense(10000, activation=act_funcs[0], use_bias=True)
-            l0.build((None, 2))
-            model_new.add(l0)
-            ke0_n=np.zeros(10000)+ke0[0]
-            l0.set_weights([dw0.T,ke0_n])
-            out_nn = model_new.predict(np.array([[0,1]]))
-            loger.debug("in make_img")
-            # loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
-            print("out_nn", out_nn.tolist()[0])
-            l_test_after_contr_=l_test_after_contr(out_nn.tolist()[0],10000)
-            # print("l test af contr",l_test_after_contr_)
-            # print(all([0.00010001]*10000==out_nn.tolist()))
-            vec_tested = calc_out_nn(l_test_after_contr_)
-            print("vec tested",vec_tested)
-            # print(X_matr_img[0].tolist()==vec_tested)
-            # _2d_img: np.ndarray = make_2d_arr(vec_tested)
-            vec_tested_np=np.array(vec_tested)
-            img_prep=vec_tested_np.reshape(100,100)
-            img_prep=img_prep.astype('uint8')
-            new_img = Image.fromarray(img_prep,'L')
-            new_img.save("img_net.png")
-            print("Img written")
+        # elif op == make_img_:
+        #     d0_w,d1_w,d2_w=l_weis
+        #     d0_w=l_weis[0]
+        #     model_new = Sequential()
+        #     l0 = Dense(10000, activation=act_funcs[0], use_bias=True)
+        #     l0.build((None,2))
+        #     ke2,be2=d0_w
+        #     bi2_n=np.zeros(10000)+be2[0]
+        #     l0.set_weights([ke2.T,bi2_n])
+        #     l0.set_weights([d2])
+        #     print("ke2 ri",ke2)
+        #     model_new.add(l0)
+        #     l1 = Dense(10, activation=act_funcs[1], use_bias=True)
+        #     l1.build((None,8))
+        #     ke1,be1=d1_w
+        #     be1_n=np.zeros(10)+be1[0]
+        #     l1.set_weights([ke1.T,be1_n])
+        #     model_new.add(l1)
+        #     l2 = Dense(10000, activation=act_funcs[0], use_bias=True)
+        #     l2.build((None,10))
+        #     ke0,bi0=d0_w
+        #     bi0_n=np.zeros(10000)+bi0[0]
+        #     l2.set_weights([ke0.T,bi0_n])
+        #     model_new.add(l2)
+        #     out_nn = model_new.predict(np.array([[0,1]]))
+        #     loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
+        #     print("out_nn", out_nn.tolist())
+        #     l_test_after_contr_=l_test_after_contr(out_nn.tolist()[0],10000)
+        #     print("l test af contr",l_test_after_contr_)
+        #     print(all([0.00010001]*10000==out_nn.tolist()))
+        #     vec_tested = calc_out_nn(l_test_after_contr_)
+        #     print("vec tested",vec_tested)
+        #     print(X_matr_img[0].tolist()==vec_tested)
+        #     _2d_img: np.ndarray = make_2d_arr(vec_tested)
+        #     vec_tested_np=np.array(vec_tested)
+        #     img_prep=vec_tested_np.reshape(100,100)
+        #     img_prep=img_prep.astype('uint8')
+        #     new_img = Image.fromarray(img_prep,'L')
+        #     new_img.save("img_net_creative.png")
+        #     print("Img written")
+        #     logger.info("Img written")
+        #     loger.debug("in make_img")
+        # elif op == make_img_one_decomp:
+        #     dw0, ke0= l_weis[0]
+        #     model_new = Sequential()
+        #     l0 = Dense(10000, activation=act_funcs[0], use_bias=True)
+        #     l0.build((None, 2))
+        #     model_new.add(l0)
+        #     ke0_n=np.zeros(10000)+ke0[0]
+        #     l0.set_weights([dw0.T,ke0_n])
+        #     out_nn = model_new.predict(np.array([[0,1]]))
+        #     loger.debug("in make_img")
+        #     loger.debug("out_nn",str(out_nn))  # Похоже 10_000 массивы трудно логирует
+        #     print("out_nn", out_nn.tolist()[0])
+        #     l_test_after_contr_=l_test_after_contr(out_nn.tolist()[0],10000)
+        #     print("l test af contr",l_test_after_contr_)
+        #     print(all([0.00010001]*10000==out_nn.tolist()))
+        #     vec_tested = calc_out_nn(l_test_after_contr_)
+        #     print("vec tested",vec_tested)
+        #     print(X_matr_img[0].tolist()==vec_tested)
+        #     _2d_img: np.ndarray = make_2d_arr(vec_tested)
+        #     vec_tested_np=np.array(vec_tested)
+        #     img_prep=vec_tested_np.reshape(100,100)
+        #     img_prep=img_prep.astype('uint8')
+        #     new_img = Image.fromarray(img_prep,'L')
+        #     new_img.save("img_net.png")
+        #     print("Img written")
         elif op==load_json_wei_pr_fft:
             json_data:dict=None
             with open("weis_json.json","r") as f:
@@ -436,7 +435,7 @@ opt = SGD(lr=0.01)
 compile_pars = (opt, 'mse', ['accuracy'])
 monitor_pars=('val_accuracy')
 def adap_lr(epoch):
-    return 0.07*epoch
+    return 0.01*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr)
 fit_pars=(10, 1, 1, [my_lr_scheduler])
 my_init=My_const_init(9)
@@ -445,38 +444,6 @@ ke_init=("glorot_uniform",my_init)
 
 if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__,'a')
-    p1=(cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
-    p2=(load_model_wei,get_weis,on_contrary,stop)
-    p3=(cr_nn_,push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,2,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
-        fit_,predict,evalu_,sav_model_wei,stop)
-    p4=(load_model_wei,get_weis,make_img_,stop)
-    p5=(push_str,'b:/src1',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
-    p6=(load_model_wei,get_weis,make_img_one_decomp,stop)
-    p7=(push_str,'X_comp',push_str,'Y_comp',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
-    p8=(load_model_wei,get_weis,on_contrary,stop)
-    p9=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,push_str,'X_matr_img',push_str,'Y_matr_img_one',determe_X_Y,cr_nn_,fit_,predict,evalu_,sav_model_wei,stop)
-    p10=(push_str,'B:\\msys64\\home\\msys_u\\img\\prod_nn',push_i,1,push_i,10000,make_X_matr_img_,load_model_wei,get_weis,make_img_one_decomp,stop)
-    p11=(load_json_wei_pr_fft,stop)
-
-    p12=(make_net,('S', ('D'), (10000,2), ('S'), ('use_bias_1'), ke_init[1]),k_summary,
-         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),push_str,'b:/src',push_i,4,push_i,10000,make_X_matr_img_,
-         push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
-         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,sav_model_wei,stop)
-    p13=(make_net_load_wei,('S', ('D'), (10000,2), ('S'), ('use_bias_1'), ke_init[0]),k_summary,
-         # compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
-         push_str,'b:/src',push_i,4,push_i,10000,make_X_matr_img_,
-         push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
-         # fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),
-         predict,sav_model_wei,stop)
-    p14=(make_net,('S', ('D','D'), (2,3,1),('r','s'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
-        k_summary,
-        compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
-        fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,
-        sav_model_wei,plot_train,"Or",
-        stop)
-    p15=(load_model_wei,predict,stop)
-    p16=(load_model_wei,get_weis,make_net_on_contrary,('S', ('D','D'), (2,3,1),('r','s'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
-         k_plot_model,stop)
     p17=(push_i,10000,push_str,'B:\\msys64\\home\\msys_u\\img\\tmp',learn_mult_class,
          make_net,('S', ('D','D','D'), (10000,3000,10,2),('r','r','S'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
          k_summary,

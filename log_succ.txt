@@ -1,7 +1,0 @@
-DEBUG:util:Log started 06/01/20 20:48:52
-INFO:util:None
-DEBUG:util:Model created <keras.engine.sequential.Sequential object at 0x0B95BE10>
-INFO:util:Predict matr: [[0.8978867 ]
- [0.7213615 ]
- [0.83037114]
- [0.36691785]]
