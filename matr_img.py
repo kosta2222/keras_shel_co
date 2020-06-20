@@ -6,11 +6,11 @@ from PIL import Image
 import PIL
 def matr_img(path_:str,pixel_amount:int)->tuple:
     p=listdir(path_)
-    print("p",p)
+    # print("p",p)
     X=[]
+    Y=[]
     fold_cont:list=None
     num_clss=len(p)
-    Y=[]
     img:PIL.Image=None
     data=None
     for fold_name_i in p:
@@ -28,12 +28,13 @@ def matr_img(path_:str,pixel_amount:int)->tuple:
             img=Image.open(os.path.join(p_tmp_ful,file_name_j))
             data=list(img.getdata())
             X_t[f_index]=data
-            print("X_t[f_index]",X_t[f_index])
+            # print("X_t[f_index]",X_t[f_index])
             f_index+=1
+        X_t=X_t.tolist()
+        Y_t=Y_t.tolist()
         X.extend(X_t)
         Y.extend(Y_t)
-        print("X",X)
-
+        # print("X",X)
     return (X,Y)
 
 def vm(buffer, logger=None, date=None):
@@ -79,6 +80,15 @@ def vm(buffer, logger=None, date=None):
             return
         op=buffer[ip]
 
+import unittest
+class TestFunc(unittest.TestCase):
+    def test1(self):
+        out=matr_img('B:\\msys64\\home\\msys_u\\img\\tmp',10000)
+        self.assertEqual(9,len(out[0]))
+        self.assertEqual(9,len(out[1]))
+        self.assertEqual(10000,len(out[0][0]))
+        self.assertEqual(2,len(out[1][0]))
 if __name__ == '__main__':
     p1=(push_str,'B:\\msys64\\home\\msys_u\\img\\tmp',push_i,10000,matr_img_)
-    vm(p1)
+    # vm(p1)
+    unittest.main()

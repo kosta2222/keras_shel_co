@@ -16,6 +16,7 @@ import json
 from keras.utils import generic_utils
 import matplotlib.pyplot as plt
 import logging
+from matr_img import matr_img
 
 
 # from  keras.optimizers import
@@ -63,6 +64,7 @@ fit_net=23
 make_net_load_wei=24
 make_net_on_contrary=25
 plot_train=26
+learn_mult_class=27
 ops=("")  #  No need in console input in this programm
 
 
@@ -254,6 +256,14 @@ def vm(buffer,logger, date):
                     json.dump(wei_dic,f)
                     print("Json weights written")
                     logger.info("Json weights written")
+        elif op==learn_mult_class:
+            pix_am=steck[sp]
+            sp-=1
+            path_=steck_str[sp_str]
+            sp_str-=1
+            X_t, Y_t=matr_img(path_,pix_am)
+            X_t=np.array(X_t)
+            Y_t=np.array(Y_t)
         elif op == make_img_:
             # d0_w,d1_w,d2_w=l_weis
             d0_w=l_weis[0]
@@ -458,15 +468,23 @@ if __name__ == '__main__':
          push_str,'X_matr_img',push_str,'Y_matr_img',determe_X_Y,
          # fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),
          predict,sav_model_wei,stop)
-    p14=(make_net,('S', ('D','D'), (2,3,1),('r','s'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),k_summary,
+    p14=(make_net,('S', ('D','D'), (2,3,1),('r','s'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
+        k_summary,
         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
-         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,
-         sav_model_wei,plot_train,"Or",
-         stop)
+        fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),predict,
+        sav_model_wei,plot_train,"Or",
+        stop)
     p15=(load_model_wei,predict,stop)
     p16=(load_model_wei,get_weis,make_net_on_contrary,('S', ('D','D'), (2,3,1),('r','s'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
          k_plot_model,stop)
-    console('>>>', p14, loger, date)
+    p17=(push_i,10000,push_str,'B:\\msys64\\home\\msys_u\\img\\tmp',learn_mult_class,
+         make_net,('S', ('D','D','D'), (10000,3000,10,2),('r','r','S'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
+         k_summary,
+         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
+         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3]),
+         predict,
+         stop)
+    console('>>>', p17, loger, date)
 
 
 
