@@ -10,7 +10,7 @@ import keras.backend as K
 import numpy as np
 from numpy.fft import rfft, irfft, ifft,fft
 from util import get_logger, make_train_img_matr, calc_out_nn, make_2d_arr,l_test_after_contr, calc_out_nn_n, matr_img
-from keras.callbacks import LearningRateScheduler, History
+from keras.callbacks import LearningRateScheduler, History, ModelCheckpoint
 import json
 from keras.utils import generic_utils
 import matplotlib.pyplot as plt
@@ -63,6 +63,8 @@ make_net_load_wei=24
 make_net_on_contrary=25
 plot_train=26
 get_mult_class_matr=27
+cr_sav_model_wei_best_callback=28
+
 ops=("")  #  No need in console input in this programm
 
 
@@ -159,6 +161,7 @@ def plot_history_(_file:str,history:History,name_gr:str,logger:logging.Logger):
 
 def vm(buffer,logger, date):
     global X_t, Y_t,d0_w,d1_w,d2_w, X_matr_img
+    save_wei_best_callback:ModelCheckpoint=None
     model_obj: keras.models.Model = None
     history:History=None
     l_weis=[]
@@ -426,9 +429,17 @@ def vm(buffer,logger, date):
             ip+=1
             arg=buffer[ip]
             ep,ba_size,val_spl,shuffle,callbacks=arg
-            history=model_obj.fit(X_t, Y_t, epochs=ep,
-                          batch_size=ba_size,
-            validation_split=val_spl, shuffle=shuffle, callbacks=callbacks)
+            if save_wei_best_callback:
+                callbacks.append(save_wei_best_callback)
+            history=model_obj.fit(X_t, Y_t, epochs=ep, batch_size=ba_size, validation_split=val_spl, shuffle=shuffle, callbacks=callbacks)
+        elif op == cr_sav_model_wei_best_callback:
+            wei_file = 'wei.h5'
+            monitor='<uninitialize>'
+            save_best_only=True
+            ip+=1
+            arg=buffer[ip]
+            monitor=arg
+            save_wei_best_callback=ModelCheckpoint(wei_file, monitor, save_best_only)
         else:
             raise RuntimeError("Unknown bytecode -> %d."%op)
         ip+=1
@@ -470,6 +481,7 @@ if __name__ == '__main__':
          evalu_,
          predict,
          stop)
+    # если используем cr_sav_model_wei_best_callback и fit - не надо сохранять модель и веса
     console('>>>', p17, loger, date)
 
 
