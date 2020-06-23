@@ -441,7 +441,7 @@ def vm(buffer,logger, date):
             ip+=1
             arg=buffer[ip]
             monitor=arg
-            save_wei_best_callback=ModelCheckpoint(wei_file, monitor, save_best_only)
+            save_wei_best_callback=ModelCheckpoint(wei_file, monitor,save_best_only=True, period=1, verbose=1, save_weights_only=True)
         else:
             raise RuntimeError("Unknown bytecode -> %d."%op)
         ip+=1
@@ -486,7 +486,7 @@ if __name__ == '__main__':
     # если используем cr_sav_model_wei_best_callback и fit - не надо сохранять веса
     p19 = (
     push_i, 10000, push_str, r'B:\msys64\home\msys_u\code\python\keras_shel_co\train_ann\train', get_mult_class_matr,
-    cr_sav_model_wei_best_callback,('acc'),
+    cr_sav_model_wei_best_callback,('loss'),
     make_net, ('S', ('D', 'D', 'D'), (10000, 3000, 800, 2), ('s', 's', 'S'), ('use_bias_1', 'use_bias_1', 'use_bias_1'),
                ke_init[1]),
     k_summary,
