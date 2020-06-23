@@ -486,7 +486,8 @@ if __name__ == '__main__':
     # если используем cr_sav_model_wei_best_callback и fit - не надо сохранять веса
     p19 = (
     push_i, 10000, push_str, r'B:\msys64\home\msys_u\code\python\keras_shel_co\train_ann\train', get_mult_class_matr,
-    make_net, (cr_sav_model_wei_best_callback,('acc'),'S', ('D', 'D', 'D'), (10000, 3000, 800, 2), ('s', 's', 'S'), ('use_bias_1', 'use_bias_1', 'use_bias_1'),
+    cr_sav_model_wei_best_callback,('acc'),
+    make_net, ('S', ('D', 'D', 'D'), (10000, 3000, 800, 2), ('s', 's', 'S'), ('use_bias_1', 'use_bias_1', 'use_bias_1'),
                ke_init[1]),
     k_summary,
     compile_net, (compile_pars[0], compile_pars[1], compile_pars[2]),
@@ -496,7 +497,7 @@ if __name__ == '__main__':
     sav_model,
     plot_train, "Tuples and Circs",
     stop)
-    console('>>>', p17, loger, date)
+    console('>>>', p18, loger, date)
 
 
 
