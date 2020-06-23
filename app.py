@@ -45,7 +45,7 @@ predict = 5
 evalu_=6
 determe_X_Y=7
 cl_log=8
-sav_model_wei=9
+sav_model=9
 load_model_wei=10
 get_weis=11
 on_contrary=12
@@ -64,6 +64,7 @@ make_net_on_contrary=25
 plot_train=26
 get_mult_class_matr=27
 cr_sav_model_wei_best_callback=28
+sav_model_wei=29
 
 ops=("")  #  No need in console input in this programm
 
@@ -231,11 +232,12 @@ def vm(buffer,logger, date):
             with open('log.txt','w') as f:
                 f.truncate()
             print("Log file cleared")
-        elif op==sav_model_wei:
+        elif op==sav_model:
             with open("model_json.json", 'w') as f:
                 f.write(model_obj.to_json())
             print("Model saved")
             logger.info('Model saved')
+        elif op==sav_model_wei:
             model_obj.save_weights("wei.h5", overwrite=True)
             print("Weights saved")
             logger.info('Weights saved')
@@ -481,7 +483,19 @@ if __name__ == '__main__':
          evalu_,
          predict,
          stop)
-    # если используем cr_sav_model_wei_best_callback и fit - не надо сохранять модель и веса
+    # если используем cr_sav_model_wei_best_callback и fit - не надо сохранять веса
+    p19 = (
+    push_i, 10000, push_str, r'B:\msys64\home\msys_u\code\python\keras_shel_co\train_ann\train', get_mult_class_matr,
+    make_net, (cr_sav_model_wei_best_callback,('acc'),'S', ('D', 'D', 'D'), (10000, 3000, 800, 2), ('s', 's', 'S'), ('use_bias_1', 'use_bias_1', 'use_bias_1'),
+               ke_init[1]),
+    k_summary,
+    compile_net, (compile_pars[0], compile_pars[1], compile_pars[2]),
+    fit_net, (fit_pars[0], fit_pars[1], fit_pars[2], fit_pars[3], fit_pars[4]),
+    evalu_,
+    predict,
+    sav_model,
+    plot_train, "Tuples and Circs",
+    stop)
     console('>>>', p17, loger, date)
 
 
