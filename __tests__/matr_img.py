@@ -28,13 +28,19 @@ def matr_img(path_:str,pixel_amount:int)->tuple:
             img=Image.open(os.path.join(p_tmp_ful,file_name_j))
             data=list(img.getdata())
             X_t[f_index]=data
-            # print("X_t[f_index]",X_t[f_index])
+            print("File name", file_name_j)
             f_index+=1
         X_t=X_t.tolist()
         Y_t=Y_t.tolist()
         X.extend(X_t)
         Y.extend(Y_t)
         # print("X",X)
+    # print("Check matrix")
+    # for fix_list_ind in range(len(X)):
+    #    for tmp_list_ind in range(len(X)):
+    #        if X[fix_list_ind]==X[tmp_list_ind] and fix_list_ind!=tmp_list_ind:
+    #            print("Op found equal")
+
     return (X,Y)
 
 def vm(buffer, logger=None, date=None):

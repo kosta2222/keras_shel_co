@@ -185,6 +185,7 @@ def matr_img(path_:str,pixel_amount:int)->tuple:
             data=list(img.getdata())
             X_t[f_index]=data
             # print("X_t[f_index]",X_t[f_index])
+            print("file name",file_name_j)
             f_index+=1
         X_t=X_t.tolist()
         Y_t=Y_t.tolist()

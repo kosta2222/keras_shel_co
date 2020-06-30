@@ -15,6 +15,7 @@ import json
 from keras.utils import generic_utils
 import matplotlib.pyplot as plt
 import logging
+import sys
 
 
 # from  keras.optimizers import
@@ -32,7 +33,36 @@ class My_const_init(initializers.Initializer):
     def from_config(cls, config):
         return cls(**config)
 
+class My_subcl_model_checkpoint(ModelCheckpoint):
+    def __init__(self,loss_tresho, acc_shuren, filepath, loger):
+        self.loss_threshold=loss_tresho
+        self.acc_shureness=acc_shuren
+        self.filepath=filepath
+        self.loger=loger
+    # def on_batch_begin(self, batch, logs=None):
+        # print("logs",logs)
+    # def on_epoch_begin(self, epoch, logs=None):
+    #     print("logs",logs)
+    def on_epoch_end(self, epoch, logs=None):
+        print("logs", logs)
+        loss=logs.get('loss')
+        acc=logs.get('acc')
+        if loss<=self.loss_threshold and acc==self.acc_shureness:
+            print("Interrupted")
+            self.model.save_weights(self.filepath, overwrite=True)
+            with open("model_json.json", 'w') as f:
+                f.write(self.model.to_json())
+            print("Weights saved")
+            loger.info("Weights saved")
+            print("Model saved")
+            loger.info("Model saved")
+            sys.exit(0)
+
+
+
+
 generic_utils._GLOBAL_CUSTOM_OBJECTS['My_const_init']=My_const_init(7)
+generic_utils._GLOBAL_CUSTOM_OBJECTS['My_subcl_mod_checkpoint']=My_subcl_model_checkpoint
 
 len_=10
 stop=-1
@@ -65,6 +95,7 @@ plot_train=26
 get_mult_class_matr=27
 cr_sav_model_wei_best_callback=28
 sav_model_wei=29
+cr_callback_wi_loss_treshold_and_acc_shure=30
 
 ops=("")  #  No need in console input in this programm
 
@@ -130,12 +161,12 @@ len_=256
 X_matr_img=None
 Y_matr_img=np.array([[0,1],[0,1],[0,1],[0,1]])
 Y_matr_img_one=np.array([[0,1]])
-or_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
-or_Y = [[1], [1], [1], [0]]
+and_X = [[1, 1], [1, 0], [0, 1], [0, 0]]
+and_Y = [[1], [0], [0], [0]]
 X_comp=np.array([[0,1,0,1,1]])
 Y_comp=np.array([[0,1]])
-X = np.array(or_X)
-Y = np.array(or_Y)
+X = np.array(and_X)
+Y = np.array(and_Y)
 X_t=None
 Y_t=None
 X_t=X  #  по умолчанию
@@ -160,9 +191,10 @@ def plot_history_(_file:str,history:History,name_gr:str,logger:logging.Logger):
     plt.show()
 
 
-def vm(buffer,logger, date):
+def vm(buffer:tuple,logger:logging.Logger, date:str)->None:
     global X_t, Y_t,d0_w,d1_w,d2_w, X_matr_img
     save_wei_best_callback:ModelCheckpoint=None
+    threshold_callback=None
     model_obj: keras.models.Model = None
     history:History=None
     l_weis=[]
@@ -433,6 +465,8 @@ def vm(buffer,logger, date):
             ep,ba_size,val_spl,shuffle,callbacks=arg
             if save_wei_best_callback:
                 callbacks.append(save_wei_best_callback)
+            if threshold_callback:
+                callbacks.append(threshold_callback)
             history=model_obj.fit(X_t, Y_t, epochs=ep, batch_size=ba_size, validation_split=val_spl, shuffle=shuffle, callbacks=callbacks)
         elif op == cr_sav_model_wei_best_callback:
             wei_file = 'wei.h5'
@@ -442,6 +476,12 @@ def vm(buffer,logger, date):
             arg=buffer[ip]
             monitor=arg
             save_wei_best_callback=ModelCheckpoint(wei_file, monitor,save_best_only=True, period=1, verbose=1, save_weights_only=True)
+        elif op == cr_callback_wi_loss_treshold_and_acc_shure:
+            wei_file = 'wei.h5'
+            ip+=1
+            arg=buffer[ip]
+            loss_threshold,acc_shureness=arg
+            threshold_callback=My_subcl_model_checkpoint(loss_threshold, acc_shureness, wei_file, logger)
         else:
             raise RuntimeError("Unknown bytecode -> %d."%op)
         ip+=1
@@ -454,32 +494,38 @@ def vm(buffer,logger, date):
 
 opt = SGD(lr=0.01)
 # 1-optimizer 2-loss_function 3-metrics
-compile_pars = (opt, 'binary_crossentropy', ['accuracy'])
+compile_pars = (opt, 'mse', ['accuracy'])
 monitor_pars=('val_accuracy')
 def adap_lr(epoch):
-    return 0.001*epoch
+    return 0.01*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr)
 # 1-ep 2-bach_size 3-validation_split 4-shuffle 5-callbacks
-fit_pars=(10, 10, 1, False, [my_lr_scheduler])
+fit_pars=(100, 1, 1, False, [my_lr_scheduler])
 my_init=My_const_init(9)
 ke_init=("glorot_uniform",my_init)
 
 
 if __name__ == '__main__':
     loger, date=get_logger("debug","log.txt",__name__,'a')
+    p1=(make_net,('S', ('D','D'), (2,3,1),('t','s'), ('use_bias_1','use_bias_1'),ke_init[1]),
+        compile_net,("adam",compile_pars[1],compile_pars[2]),
+        cr_callback_wi_loss_treshold_and_acc_shure, (0.001, 1),
+        fit_net,(100,fit_pars[1],fit_pars[2],fit_pars[3], fit_pars[4]),
+        sav_model,
+        sav_model_wei,
+        stop
+        )
+    p2=(load_model_wei,compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),evalu_,predict,stop)
     p17=(push_i,10000,push_str,r'B:\msys64\home\msys_u\code\python\keras_shel_co\train_ann\train',get_mult_class_matr,
-         make_net,('S', ('D','D','D'), (10000,3000,800,2),('s','s','S'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
+         make_net,('S', ('D'), (10000,2),('S','S'), ('use_bias_1','use_bias_1','use_bias_1'),ke_init[1]),
          k_summary,
-         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
-         fit_net,(fit_pars[0],fit_pars[1],fit_pars[2],fit_pars[3], fit_pars[4]),
-         evalu_,
-         predict,
-         sav_model_wei,
-         plot_train,"Tuples and Circs",
+         compile_net,(compile_pars[0],"binary_crossentropy",compile_pars[2]),
+         cr_callback_wi_loss_treshold_and_acc_shure, (0.001, 1),
+         fit_net,(100,5,fit_pars[2],fit_pars[3], fit_pars[4]),
          stop)
     p18=(push_i,10000,push_str,r'B:\msys64\home\msys_u\code\python\keras_shel_co\train_ann\ask',get_mult_class_matr,
          load_model_wei,
-         compile_net,(compile_pars[0],compile_pars[1],compile_pars[2]),
+         compile_net,("adam","binary_crossentropy",compile_pars[2]),
          evalu_,
          predict,
          stop)
@@ -487,7 +533,7 @@ if __name__ == '__main__':
     p19 = (
     push_i, 10000, push_str, r'B:\msys64\home\msys_u\code\python\keras_shel_co\train_ann\train', get_mult_class_matr,
     cr_sav_model_wei_best_callback,('loss'),
-    make_net, ('S', ('D', 'D', 'D'), (10000, 3000, 800, 2), ('s', 's', 'S'), ('use_bias_1', 'use_bias_1', 'use_bias_1'),
+    make_net, ('S', ('D', 'D', 'D'), (10000, 800, 2), ('s', 's', 'S'), ('use_bias_1', 'use_bias_1', 'use_bias_1'),
                ke_init[1]),
     k_summary,
     compile_net, (compile_pars[0], compile_pars[1], compile_pars[2]),
@@ -497,7 +543,7 @@ if __name__ == '__main__':
     sav_model,
     plot_train, "Tuples and Circs",
     stop)
-    console('>>>', p18, loger, date)
+    console('>>>', p17, loger, date)
 
 
 
