@@ -8,6 +8,16 @@ from functools import wraps
 from PIL import Image
 import PIL
 from os import listdir
+
+def my_hesh_img(list_):
+    s=''
+    for i in range(len(list_)):
+        if list_[i]==0:
+            ch='ab'
+        else:
+            ch=chr(int(list_[i]))
+        s+=ch
+    return s
 #--------------Static check---------------------
 class TypeErr(Exception):
     def __init__(self,msg):
@@ -186,6 +196,8 @@ def matr_img(path_:str,pixel_amount:int)->tuple:
             X_t[f_index]=data
             # print("X_t[f_index]",X_t[f_index])
             print("file name",file_name_j)
+            # print("X_t[f_index]",X_t[f_index])
+            # print("my he img", my_hesh_img(X_t[f_index]))
             f_index+=1
         X_t=X_t.tolist()
         Y_t=Y_t.tolist()
