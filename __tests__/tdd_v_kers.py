@@ -34,11 +34,8 @@ def matr_img_3_chanels(path_:str,pixel_amount:int)->tuple:
                     X_t[f_index][tupl_ind]=data[tupl_ind][rgb_ind]
                     tupl_ind+=1
                 f_index+=1
-            # print("X_t[f_index]",X_t[f_index])
             print("file name",file_name_j)
-            # print("X_t[f_index]",X_t[f_index])
-            # print("my he img", my_hesh_img(X_t[f_index]))
-            f_index+=1
+            # f_index+=1
         X_t=X_t.tolist()
         Y_t=Y_t.tolist()
         X.extend(X_t)
@@ -96,7 +93,14 @@ def vm(buffer, logger=None, date=None):
             print("X",X)
             print("len X",len(X))
             print("len X[0]",len(X[0]))
-            assert isinstance(X,list)
+            X=list(zip(X[0],X[1],X[2]))
+            print("X zip",X)
+            X=np.array(X)
+            X.astype('uint8')
+            X=X.reshape((28,28,3))
+            img_prep=Image.fromarray(X,'RGB')
+            img_prep.save("my_chan.png")
+            # assert isinstance(X,list)
 
         ip += 1
         if ip > (len(buffer) - 1):
