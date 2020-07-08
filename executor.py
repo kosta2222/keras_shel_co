@@ -108,7 +108,6 @@ def exec(buffer:tuple,logger:logging.Logger, date:str)->None:
             Y_t.astype('float32')
             X_t/=255
         elif op==make_net:
-            if op == make_net:
                 l_tmp = None
                 acts_di:dict=None
                 acts_di={'s':'sigmoid','r':'relu','t':'tanh','S':'softmax'}

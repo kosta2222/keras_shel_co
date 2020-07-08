@@ -19,7 +19,7 @@ def adap_lr(epoch):
     return 0.01*epoch
 my_lr_scheduler=LearningRateScheduler(adap_lr)
 # 1-ep 2-bach_size 3-validation_split 4-shuffle 5-callbacks
-fit_pars=(100, 5, 1, False, [my_lr_scheduler])
+fit_pars=(100, 1, 1, False, [my_lr_scheduler])
 my_init=My_const_init(9)
 ke_init=("glorot_uniform",my_init)
 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
          determe_X_Y,
          predict,
          stop)
-    exec(p21,loger,date)
+    exec(p20,loger,date)
 
 
 

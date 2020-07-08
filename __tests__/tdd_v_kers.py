@@ -1,4 +1,51 @@
-(push_i, push_fl, push_str, send_list, send_obj,get_polin_hesh_) = range(6)
+from os import listdir
+import PIL
+from PIL import Image
+import os
+import numpy as np
+
+
+(push_i, push_fl, push_str, send_list, push_obj,get_polin_hesh_,matr_img_3_chanels) = range(7)
+
+
+def matr_img_3_chanels(path_:str,pixel_amount:int)->tuple:
+    p=listdir(path_)
+    X=[]
+    Y=[]
+    fold_cont:list=None
+    num_clss=len(p)
+    img:PIL.Image=None
+    data=None
+    for fold_name_i in p:
+        fold_name_ind=int(fold_name_i.split('_')[0])
+        p_tmp_ful=os.path.join(path_,fold_name_i)
+        fold_content=listdir(p_tmp_ful)
+        rows=len(fold_content)
+        X_t=np.zeros((3 * rows,pixel_amount))
+        Y_t=np.zeros((3 * rows,num_clss))
+        f_index=0
+        for file_name_j in fold_content:
+            Y_t[f_index][fold_name_ind]=1
+            img=Image.open(os.path.join(p_tmp_ful,file_name_j))
+            data=list(img.getdata())
+            # X_t[f_index]=data
+            for rgb_ind in range(3):
+                for tupl_ind in range(pixel_amount):
+                    X_t[f_index][tupl_ind]=data[tupl_ind][rgb_ind]
+                    tupl_ind+=1
+                f_index+=1
+            # print("X_t[f_index]",X_t[f_index])
+            print("file name",file_name_j)
+            # print("X_t[f_index]",X_t[f_index])
+            # print("my he img", my_hesh_img(X_t[f_index]))
+            f_index+=1
+        X_t=X_t.tolist()
+        Y_t=Y_t.tolist()
+        X.extend(X_t)
+        Y.extend(Y_t)
+        # print("X",X)
+    return (X,Y)
+
 
 def get_polin_hesh(list_):
     s=''
@@ -31,14 +78,25 @@ def vm(buffer, logger=None, date=None):
             sp += 1
             ip += 1
             steck[sp] = buffer[ip]
-        elif op==send_obj:
+        elif op==push_obj:
             sp+=1
             ip+=1
             steck[sp]=buffer[ip]
         elif op==get_polin_hesh_:
-            l_=steck[sp];sp-=1
+            l_=steck[sp]
+            sp-=1
             out=get_polin_hesh(l_)
             print("out",out)
+        elif op==matr_img_3_chanels:
+            pix_am=steck[sp]
+            sp-=1
+            pat=steck[sp]
+            sp-=1
+            X,Y=matr_img_3_chanels(pat,pix_am)
+            print("X",X)
+            print("len X",len(X))
+            print("len X[0]",len(X[0]))
+            assert isinstance(X,list)
 
         ip += 1
         if ip > (len(buffer) - 1):
@@ -50,6 +108,7 @@ def vm(buffer, logger=None, date=None):
 
 
 if __name__ == '__main__':
-    p1 = (send_obj,[255,0,255,255,0],get_polin_hesh_)
-    vm(p1)
+    p1 = (push_obj,[255,0,255,255,0],get_polin_hesh_)
+    p2=(push_str,r'B:\msys64\home\msys_u\img\tmp\test_3ch',push_i,784,matr_img_3_chanels)
+    vm(p2)
 
